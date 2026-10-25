@@ -1,6 +1,8 @@
 import { Check, FileText, Flag, Timer, X } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CarteAnnonce } from "../components/CarteAnnonce";
+import { Signalement } from "../components/Signalement";
 import { Badge } from "../components/Statut";
 import { Vide } from "../components/Vide";
 import { ANNONCES } from "../data/annonces";
@@ -94,6 +96,7 @@ export function Proprietaires() {
 
 export function Confiance() {
   useTitre("Confiance et sécurité");
+  const [signaler, setSignaler] = useState(false);
   return (
     <div className="wrap edito">
       <p className="eyebrow">Confiance et sécurité</p>
@@ -131,9 +134,10 @@ export function Confiance() {
           </ul>
         </div>
       </div>
-      <button type="button" className="btn btn--secondaire" style={{ marginTop: "var(--s6)" }}>
-        <Flag size={18} aria-hidden="true" /> Signaler une annonce ou un faux compte
+      <button type="button" className="btn btn--secondaire" style={{ marginTop: "var(--s6)" }} onClick={() => setSignaler(true)}>
+        <Flag size={18} aria-hidden="true" /> Signaler une arnaque ou un faux compte
       </button>
+      {signaler && <Signalement onFermer={() => setSignaler(false)} />}
     </div>
   );
 }

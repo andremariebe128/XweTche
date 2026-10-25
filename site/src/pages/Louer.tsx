@@ -1,12 +1,13 @@
 import { Bell, List, Map as MapIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Alerte } from "../components/Alerte";
 import { CarteAnnonce } from "../components/CarteAnnonce";
 import { EQUIPEMENTS } from "../components/Equipements";
 import { FondCarte } from "../components/PlanQuartier";
 import { Recherche } from "../components/Recherche";
 import { Vide } from "../components/Vide";
-import { ANNONCES, TYPES, quartierDepuisSlug, type Equipement, type TypeBien } from "../data/annonces";
+import { ANNONCES, QUARTIERS, TYPES, quartierDepuisSlug, type Equipement, type TypeBien } from "../data/annonces";
 import { fcfa } from "../lib/format";
 import { useTitre } from "../lib/titre";
 
@@ -26,6 +27,7 @@ export default function Louer() {
   const quartierPage = slugQ ? quartierDepuisSlug(slugQ) : undefined;
   const [params, setParams] = useSearchParams();
   const [vue, setVue] = useState<"liste" | "carte">("liste");
+  const [alerte, setAlerte] = useState(false);
 
   const q = params.get("q") ?? "";
   const type = params.get("type") as TypeBien | null;
@@ -143,7 +145,7 @@ export default function Louer() {
             {resultats.length} logement{resultats.length > 1 ? "s" : ""} vérifié{resultats.length > 1 ? "s" : ""} · {lieu}
           </p>
           <div className="resultats__outils">
-            <button type="button" className="btn btn--texte">
+            <button type="button" className="btn btn--texte" onClick={() => setAlerte(true)}>
               <Bell size={18} aria-hidden="true" /> Être alerté
             </button>
             <select className="tri" aria-label="Trier" value={tri} onChange={(e) => maj("tri", e.target.value === "recentes" ? null : e.target.value)}>
@@ -167,7 +169,7 @@ export default function Louer() {
             titre={`Aucune annonce pour le moment${quartierPage || q ? ` à ${lieu}` : ""}`}
             texte="Nos agents vérifient de nouveaux logements chaque semaine. Soyez prévenu par SMS dès qu'il y en a un."
             action={
-              <button type="button" className="btn btn--principal">
+              <button type="button" className="btn btn--principal" onClick={() => setAlerte(true)}>
                 <Bell size={18} aria-hidden="true" /> Être alerté
               </button>
             }
@@ -195,6 +197,15 @@ export default function Louer() {
           </div>
         )}
       </div>
+
+      {alerte && (
+        <Alerte
+          quartier={quartierPage ?? QUARTIERS.find((x) => norm(x) === norm(q)) ?? ""}
+          type={type}
+          budget={budget || undefined}
+          onFermer={() => setAlerte(false)}
+        />
+      )}
     </>
   );
 }

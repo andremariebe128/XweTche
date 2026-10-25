@@ -1,7 +1,6 @@
-import { X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import { TYPES, type Annonce } from "../data/annonces";
+import { Feuille } from "./Feuille";
 import { Porte } from "./Marque";
 
 const JOURS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
@@ -23,18 +22,6 @@ export function Reservation({ annonce, onFermer }: { annonce: Annonce; onFermer:
   const [creneau, setCreneau] = useState<string | null>(null);
   const [etape, setEtape] = useState<1 | 2 | 3>(1);
   const [tel, setTel] = useState("");
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const echap = (e: KeyboardEvent) => e.key === "Escape" && onFermer();
-    document.addEventListener("keydown", echap);
-    document.body.style.overflow = "hidden";
-    ref.current?.focus();
-    return () => {
-      document.removeEventListener("keydown", echap);
-      document.body.style.overflow = "";
-    };
-  }, [onFermer]);
 
   const d = jours[jour];
   const dateTexte = `${JOURS[d.getDay()]} ${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}`;
@@ -42,26 +29,19 @@ export function Reservation({ annonce, onFermer }: { annonce: Annonce; onFermer:
   const pris = (c: string) => (c.charCodeAt(1) + jour) % 4 === 0;
   const telValide = tel.replace(/\D/g, "").length >= 8;
 
-  return createPortal(
-    <div className="voile" onClick={(e) => e.target === e.currentTarget && onFermer()}>
-      <div className="feuille" role="dialog" aria-modal="true" aria-labelledby="resa-titre" tabIndex={-1} ref={ref}>
-        <div className="feuille__tete">
-          <div>
-            {etape < 3 && <p className="etapes-ind">Étape {etape} sur 2</p>}
-            <h2 id="resa-titre" className="h3">
-              {etape === 1 ? "Choisissez un créneau" : etape === 2 ? "Votre numéro de téléphone" : "Visite demandée"}
-            </h2>
-            {etape < 3 && (
-              <p className="petit gris" style={{ margin: "4px 0 0" }}>
-                {TYPES[annonce.type]} · {annonce.quartier} · <span className="mono">Réf. {annonce.ref}</span>
-              </p>
-            )}
-          </div>
-          <button type="button" className="btn-icone" aria-label="Fermer" onClick={onFermer}>
-            <X aria-hidden="true" />
-          </button>
-        </div>
-
+  return (
+    <Feuille
+      titre={etape === 1 ? "Choisissez un créneau" : etape === 2 ? "Votre numéro de téléphone" : "Visite demandée"}
+      surtitre={etape < 3 ? `Étape ${etape} sur 2` : undefined}
+      soustitre={
+        etape < 3 ? (
+          <>
+            {TYPES[annonce.type]} · {annonce.quartier} · <span className="mono">Réf. {annonce.ref}</span>
+          </>
+        ) : undefined
+      }
+      onFermer={onFermer}
+    >
         {etape === 1 && (
           <>
             <div className="jours" role="group" aria-label="Jour de la visite">
@@ -143,8 +123,6 @@ export function Reservation({ annonce, onFermer }: { annonce: Annonce; onFermer:
             </button>
           </div>
         )}
-      </div>
-    </div>,
-    document.body,
+    </Feuille>
   );
 }
