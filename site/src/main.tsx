@@ -5,6 +5,7 @@ import App from "./App";
 import "./index.css";
 import "./styles/composants.css";
 import "./styles/pages.css";
+import "./styles/pages-info.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -28,6 +28,7 @@ export function Pied() {
                 <li><Link to="/comment-ca-marche">Comment ça marche</Link></li>
                 <li><Link to="/proprietaires">Propriétaires</Link></li>
                 <li><Link to="/confiance">Confiance et sécurité</Link></li>
+                <li><Link to="/a-propos">À propos</Link></li>
                 <li><Link to="/aide">Aide</Link></li>
                 <li><Link to="/contact">Contact</Link></li>
               </ul>
@@ -48,6 +49,8 @@ export function Pied() {
           <span className="pied__legal">
             <Link to="/cgu">CGU</Link>
             <Link to="/confidentialite">Confidentialité</Link>
+            <Link to="/charte-proprietaire">Charte propriétaire</Link>
+            <Link to="/remboursements">Remboursements</Link>
             <Link to="/mentions-legales">Mentions légales</Link>
           </span>
         </div>

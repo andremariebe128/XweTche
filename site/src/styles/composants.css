@@ -198,7 +198,8 @@
 }
 .pied__legal {
   display: flex;
-  gap: var(--s4);
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
 }
 @media (min-width: 768px) {
   .pied__colonnes {

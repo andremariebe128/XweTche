@@ -1,11 +1,13 @@
 import { Bell, ChevronLeft, ChevronRight, Flag, Heart, MapPin, Share2, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Alerte } from "../components/Alerte";
 import { CoutTotal } from "../components/CoutTotal";
 import { EQUIPEMENTS } from "../components/Equipements";
 import { Photo } from "../components/Photo";
 import { FondCarte } from "../components/PlanQuartier";
 import { Reservation } from "../components/Reservation";
+import { Signalement } from "../components/Signalement";
 import { BadgeAnnonce } from "../components/Statut";
 import { ANNONCES, TYPES, slugQuartier, totalEntree } from "../data/annonces";
 import { useFavoris } from "../lib/favoris";
@@ -18,7 +20,7 @@ export default function Annonce() {
   const annonce = ANNONCES.find((a) => a.slug === slug);
   const { estFavori, basculer } = useFavoris();
   const [photo, setPhoto] = useState(0);
-  const [reserver, setReserver] = useState(false);
+  const [fenetre, setFenetre] = useState<"reserver" | "alerte" | "signaler" | null>(null);
 
   useTitre(annonce ? `${TYPES[annonce.type]} à ${annonce.quartier}, ${fcfa(annonce.loyer)}` : "Annonce introuvable");
 
@@ -28,11 +30,11 @@ export default function Annonce() {
   const favori = estFavori(annonce.ref);
   const n = annonce.photos.length;
   const action = loue ? (
-    <button type="button" className="btn btn--principal btn--bloc">
+    <button type="button" className="btn btn--principal btn--bloc" onClick={() => setFenetre("alerte")}>
       <Bell size={18} aria-hidden="true" /> Être alerté
     </button>
   ) : (
-    <button type="button" className="btn btn--principal btn--bloc" onClick={() => setReserver(true)}>
+    <button type="button" className="btn btn--principal btn--bloc" onClick={() => setFenetre("reserver")}>
       Réserver une visite
     </button>
   );
@@ -184,7 +186,7 @@ export default function Annonce() {
                   <Link to="/confiance" className="petit">
                     Comment nous vérifions un logement
                   </Link>
-                  <button type="button" className="btn btn--texte signaler petit">
+                  <button type="button" className="btn btn--texte signaler petit" onClick={() => setFenetre("signaler")}>
                     <Flag size={16} aria-hidden="true" /> Signaler cette annonce
                   </button>
                 </div>
@@ -213,7 +215,9 @@ export default function Annonce() {
         {action}
       </div>
 
-      {reserver && <Reservation annonce={annonce} onFermer={() => setReserver(false)} />}
+      {fenetre === "reserver" && <Reservation annonce={annonce} onFermer={() => setFenetre(null)} />}
+      {fenetre === "alerte" && <Alerte annonce={annonce} onFermer={() => setFenetre(null)} />}
+      {fenetre === "signaler" && <Signalement annonce={annonce} onFermer={() => setFenetre(null)} />}
     </div>
   );
 }
