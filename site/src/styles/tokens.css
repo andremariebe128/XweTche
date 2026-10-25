@@ -1,0 +1,60 @@
+/*
+ * Jetons de design Xwé Tché (cahier des charges, chapitre 06).
+ * Source unique : toute couleur, taille ou rayon de l'interface passe par ces variables.
+ */
+:root {
+  /* Couleurs de marque */
+  --lagune: #0b6b73;
+  --lagune-700: #08555b;
+  --lagune-50: #e6f1f2;
+  --encre: #12141c;
+  --gris: #6b7080;
+  --bord: #e4e5ea;
+  --doux: #f6f6f8;
+  --blanc: #ffffff;
+  /* Réservé à la lumière de la porte. Jamais pour du texte, un fond, un bouton ou un statut. */
+  --safran: #ffb21e;
+
+  /* Statuts */
+  --succes: #0f8a4f;
+  --succes-texte: #0a6b3c;
+  --succes-fond: #e7f4ed;
+  --erreur: #d63a2f;
+  --erreur-texte: #b3261e;
+  --erreur-fond: #fcebea;
+  --neutre-fond: #eeeff2;
+
+  /* Typographie */
+  --font: "Archivo", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Espacements (unité 4 px) */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+  --s9: 96px;
+
+  /* Formes */
+  --r-champ: 12px;
+  --r-carte: 16px;
+  --r-feuille: 20px;
+  --r-badge: 999px;
+  --ombre-flottant: 0 8px 24px rgba(18, 20, 28, 0.12);
+
+  --contenu: 1200px;
+  --gouttiere: 16px;
+  --tactile: 48px;
+
+  --anim: 200ms;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gouttiere: 24px;
+  }
+}
