@@ -1,0 +1,468 @@
+@import "./styles/tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--blanc);
+  color: var(--encre);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (min-width: 1024px) {
+  body {
+    font-size: 17px;
+    line-height: 26px;
+  }
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: var(--lagune);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--lagune);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Mise en page ---------- */
+
+.wrap {
+  width: 100%;
+  max-width: calc(var(--contenu) + 2 * var(--gouttiere));
+  margin: 0 auto;
+  padding: 0 var(--gouttiere);
+}
+
+.section {
+  padding: var(--s8) 0;
+}
+@media (min-width: 1024px) {
+  .section {
+    padding: var(--s9) 0;
+  }
+}
+.section--doux {
+  background: var(--doux);
+}
+
+.stack > * + * {
+  margin-top: var(--s4);
+}
+
+/* ---------- Typographie ---------- */
+
+.h1,
+.h2,
+.h3 {
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.h1 {
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 34px;
+}
+.h2 {
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 28px;
+}
+.h3 {
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+}
+.prix {
+  font-weight: 800;
+  font-size: 20px;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+}
+.prix small {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--gris);
+  letter-spacing: 0;
+}
+@media (min-width: 1024px) {
+  .h1 {
+    font-size: 48px;
+    line-height: 52px;
+  }
+  .h2 {
+    font-size: 32px;
+    line-height: 38px;
+  }
+  .h3 {
+    font-size: 22px;
+    line-height: 28px;
+  }
+  .prix {
+    font-size: 24px;
+    line-height: 28px;
+  }
+}
+
+.petit {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.gris {
+  color: var(--gris);
+}
+.mono {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 18px;
+}
+@media (min-width: 1024px) {
+  .mono {
+    font-size: 14px;
+    line-height: 20px;
+  }
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: 0.08em;
+  color: var(--lagune);
+  text-transform: uppercase;
+  margin: 0 0 var(--s3);
+}
+.lede {
+  max-width: 60ch;
+  color: #3d4150;
+  margin: var(--s4) 0 0;
+}
+
+/* ---------- Boutons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: var(--tactile);
+  padding: 0 var(--s5);
+  border-radius: var(--r-champ);
+  border: 2px solid transparent;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--anim), border-color var(--anim), color var(--anim);
+  white-space: nowrap;
+}
+.btn:hover {
+  text-decoration: none;
+}
+.btn--principal {
+  background: var(--lagune);
+  color: var(--blanc);
+}
+.btn--principal:hover,
+.btn--principal:active {
+  background: var(--lagune-700);
+}
+.btn--principal:disabled {
+  background: var(--bord);
+  color: var(--gris);
+  cursor: not-allowed;
+}
+.btn--secondaire {
+  background: transparent;
+  border-color: var(--lagune);
+  color: var(--lagune);
+}
+.btn--secondaire:hover {
+  background: var(--lagune-50);
+}
+.btn--secondaire-blanc {
+  background: transparent;
+  border-color: var(--blanc);
+  color: var(--blanc);
+}
+.btn--secondaire-blanc:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.btn--blanc {
+  background: var(--blanc);
+  color: var(--lagune);
+}
+.btn--blanc:hover {
+  background: var(--lagune-50);
+}
+.btn--texte {
+  background: none;
+  border: 0;
+  padding: 0 var(--s2);
+  color: var(--lagune);
+}
+.btn--texte:hover {
+  text-decoration: underline;
+}
+.btn--danger {
+  background: transparent;
+  border-color: var(--erreur);
+  color: var(--erreur-texte);
+}
+.btn--bloc {
+  width: 100%;
+}
+.btn-icone {
+  display: inline-grid;
+  place-items: center;
+  width: var(--tactile);
+  height: var(--tactile);
+  border-radius: var(--r-champ);
+  border: 1px solid var(--bord);
+  background: var(--blanc);
+  color: var(--encre);
+  cursor: pointer;
+}
+.btn-icone:hover {
+  border-color: var(--lagune);
+  color: var(--lagune);
+}
+
+/* ---------- Badges de statut (6.6) ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--r-badge);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+.badge svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.badge--succes {
+  background: var(--succes-fond);
+  color: var(--succes-texte);
+}
+.badge--neutre {
+  background: var(--neutre-fond);
+  color: #4f5363;
+}
+.badge--info {
+  background: var(--lagune-50);
+  color: var(--lagune);
+}
+.badge--action {
+  background: var(--erreur-fond);
+  color: var(--erreur-texte);
+}
+.badge--erreur {
+  background: var(--erreur-fond);
+  color: var(--erreur-texte);
+}
+.badge--sur-photo {
+  background: var(--blanc);
+  box-shadow: 0 1px 2px rgba(18, 20, 28, 0.12);
+}
+
+/* ---------- Champs ---------- */
+
+.champ {
+  display: grid;
+  gap: 6px;
+}
+.champ label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.champ input,
+.champ select {
+  height: var(--tactile);
+  padding: 0 var(--s4);
+  border: 1px solid var(--bord);
+  border-radius: var(--r-champ);
+  background: var(--blanc);
+  font-size: 16px;
+}
+.champ input:focus,
+.champ select:focus {
+  outline: none;
+  border: 2px solid var(--lagune);
+  padding: 0 calc(var(--s4) - 1px);
+}
+.champ .aide {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--gris);
+}
+
+/* ---------- Pastilles de filtre ---------- */
+
+.pastilles {
+  display: flex;
+  gap: var(--s2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.pastilles::-webkit-scrollbar {
+  display: none;
+}
+.pastille {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 var(--s4);
+  border-radius: var(--r-badge);
+  border: 1px solid var(--bord);
+  background: var(--blanc);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--encre);
+  text-decoration: none;
+}
+.pastille:hover {
+  border-color: var(--lagune);
+  text-decoration: none;
+}
+.pastille[aria-pressed="true"],
+.pastille.est-actif {
+  background: var(--lagune-50);
+  border-color: var(--lagune-50);
+  color: var(--lagune);
+}
+.pastille svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Cartes ---------- */
+
+.carte {
+  border: 1px solid var(--bord);
+  border-radius: var(--r-carte);
+  background: var(--blanc);
+}
+
+/* ---------- Grilles ---------- */
+
+.grille-annonces {
+  display: grid;
+  gap: var(--s5);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .grille-annonces {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .grille-annonces {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ---------- Bandeau ---------- */
+
+.bandeau {
+  display: flex;
+  gap: var(--s3);
+  align-items: flex-start;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-champ);
+  font-size: 14px;
+  line-height: 20px;
+}
+.bandeau svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+.bandeau--info {
+  background: var(--lagune-50);
+  color: var(--lagune-700);
+}
+.bandeau--succes {
+  background: var(--succes-fond);
+  color: var(--succes-texte);
+}
+.bandeau--erreur {
+  background: var(--erreur-fond);
+  color: var(--erreur-texte);
+}
+
+/* ---------- Squelettes ---------- */
+
+.squelette {
+  background: linear-gradient(90deg, var(--doux), var(--bord), var(--doux));
+  background-size: 200% 100%;
+  animation: squelette 1.4s ease-in-out infinite;
+  border-radius: var(--r-champ);
+}
+@keyframes squelette {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
