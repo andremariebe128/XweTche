@@ -7,7 +7,12 @@ import Aide from "./pages/Aide";
 import APropos from "./pages/APropos";
 import Contact from "./pages/Contact";
 import Annonce from "./pages/Annonce";
-import { BientotPage, CommentCaMarche, Confiance, MonEspace, Proprietaires } from "./pages/Editoriales";
+import Bail from "./pages/Bail";
+import Connexion from "./pages/Connexion";
+import Deposer from "./pages/Deposer";
+import { CommentCaMarche, Confiance, Proprietaires } from "./pages/Editoriales";
+import MonEspace from "./pages/MonEspace";
+import Recu from "./pages/Recu";
 import Introuvable from "./pages/Introuvable";
 import Legal from "./pages/Legal";
 import Louer from "./pages/Louer";
@@ -50,8 +55,10 @@ export default function App() {
         <Route path="proprietaires" element={<Proprietaires />} />
         <Route path="confiance" element={<Confiance />} />
         <Route path="mon-espace" element={<MonEspace />} />
-        <Route path="connexion" element={<BientotPage titre="Connexion" />} />
-        <Route path="proprietaires/deposer" element={<BientotPage titre="Déposer un bien" />} />
+        <Route path="connexion" element={<Connexion />} />
+        <Route path="proprietaires/deposer" element={<Deposer />} />
+        <Route path="bail/:ref" element={<Bail />} />
+        <Route path="recu/:numero" element={<Recu />} />
         <Route path="aide" element={<Aide />} />
         <Route path="contact" element={<Contact />} />
         <Route path="a-propos" element={<APropos />} />

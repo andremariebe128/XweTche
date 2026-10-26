@@ -1,12 +1,8 @@
 import { Check, FileText, Flag, Timer, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { CarteAnnonce } from "../components/CarteAnnonce";
 import { Signalement } from "../components/Signalement";
 import { Badge } from "../components/Statut";
-import { Vide } from "../components/Vide";
-import { ANNONCES } from "../data/annonces";
-import { useFavoris } from "../lib/favoris";
 import { useTitre } from "../lib/titre";
 
 export function CommentCaMarche() {
@@ -138,49 +134,6 @@ export function Confiance() {
         <Flag size={18} aria-hidden="true" /> Signaler une arnaque ou un faux compte
       </button>
       {signaler && <Signalement onFermer={() => setSignaler(false)} />}
-    </div>
-  );
-}
-
-export function MonEspace() {
-  useTitre("Mes favoris");
-  const { liste } = useFavoris();
-  const favoris = ANNONCES.filter((a) => liste.includes(a.ref));
-  return (
-    <div className="wrap edito">
-      <p className="eyebrow">Mon espace</p>
-      <h1 className="h1">Mes favoris</h1>
-      <div style={{ marginTop: "var(--s6)" }}>
-        {favoris.length ? (
-          <div className="grille-annonces">
-            {favoris.map((a, i) => (
-              <CarteAnnonce key={a.ref} annonce={a} index={i} />
-            ))}
-          </div>
-        ) : (
-          <Vide
-            titre="Aucun favori pour l'instant"
-            texte="Touchez le cœur sur une annonce pour la retrouver ici, même sans connexion."
-            action={<Link to="/louer" className="btn btn--principal">Voir les logements</Link>}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function BientotPage({ titre }: { titre: string }) {
-  useTitre(titre);
-  return (
-    <div className="wrap edito">
-      <h1 className="h1">{titre}</h1>
-      <div style={{ marginTop: "var(--s6)" }}>
-        <Vide
-          titre="Cette page arrive bientôt"
-          texte="Elle fait partie des prochaines étapes du site."
-          action={<Link to="/" className="btn btn--secondaire">Retour à l'accueil</Link>}
-        />
-      </div>
     </div>
   );
 }

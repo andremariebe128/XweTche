@@ -1,6 +1,7 @@
 import { Bell } from "lucide-react";
 import { useState } from "react";
 import { QUARTIERS, TYPES, type Annonce, type TypeBien } from "../data/annonces";
+import { id, majEtat, useEtat } from "../lib/compte";
 import { fcfa } from "../lib/format";
 import { Feuille } from "./Feuille";
 import { Porte } from "./Marque";
@@ -24,7 +25,8 @@ export function Alerte({
   const [q, setQ] = useState(quartier);
   const [t, setT] = useState<string>(type ?? "");
   const [b, setB] = useState(budget ? String(budget) : "");
-  const [tel, setTel] = useState("");
+  const { compte } = useEtat();
+  const [tel, setTel] = useState(compte?.tel ?? "");
   const [canal, setCanal] = useState<Canal>("sms");
   const [envoye, setEnvoye] = useState(false);
   const telValide = tel.replace(/\D/g, "").length >= 8;
@@ -69,7 +71,20 @@ export function Alerte({
         className="formulaire"
         onSubmit={(e) => {
           e.preventDefault();
-          if (telValide) setEnvoye(true);
+          if (!telValide) return;
+          if (compte)
+            majEtat((et) => ({
+              ...et,
+              alertes: [
+                ...et.alertes,
+                {
+                  id: id(),
+                  resume: annonce ? `Liste d'attente · ${TYPES[annonce.type]} · ${annonce.quartier} · ${annonce.ref}` : resume(q, t, b),
+                  canal: canal === "sms" ? "SMS" : "WhatsApp",
+                },
+              ],
+            }));
+          setEnvoye(true);
         }}
       >
         {!annonce && (

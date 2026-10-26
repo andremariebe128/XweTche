@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { TYPES, type Annonce } from "../data/annonces";
+import { code, id, majEtat, useEtat } from "../lib/compte";
 import { Feuille } from "./Feuille";
 import { Porte } from "./Marque";
 
@@ -21,7 +23,8 @@ export function Reservation({ annonce, onFermer }: { annonce: Annonce; onFermer:
   const [jour, setJour] = useState(0);
   const [creneau, setCreneau] = useState<string | null>(null);
   const [etape, setEtape] = useState<1 | 2 | 3>(1);
-  const [tel, setTel] = useState("");
+  const { compte } = useEtat();
+  const [tel, setTel] = useState(compte?.tel ?? "");
 
   const d = jours[jour];
   const dateTexte = `${JOURS[d.getDay()]} ${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}`;
@@ -74,7 +77,17 @@ export function Reservation({ annonce, onFermer }: { annonce: Annonce; onFermer:
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (telValide) setEtape(3);
+              if (!telValide) return;
+              if (compte) {
+                const [h, m] = creneau!.split("h").map(Number);
+                const quand = new Date(d);
+                quand.setHours(h, m, 0, 0);
+                majEtat((et) => ({
+                  ...et,
+                  visites: [...et.visites, { id: id(), ref: annonce.ref, date: quand.toISOString(), code: code(), statut: "a-venir" }],
+                }));
+              }
+              setEtape(3);
             }}
           >
             <div className="champ">
@@ -118,9 +131,15 @@ export function Reservation({ annonce, onFermer }: { annonce: Annonce; onFermer:
             <div className="bandeau bandeau--info" style={{ textAlign: "left" }}>
               Ne payez rien en dehors de Xwé Tché. Nous ne demandons jamais d'argent avant la visite.
             </div>
-            <button type="button" className="btn btn--secondaire btn--bloc" onClick={onFermer}>
-              Retour à l'annonce
-            </button>
+            {compte ? (
+              <Link to="/mon-espace" className="btn btn--secondaire btn--bloc">
+                Voir mes visites
+              </Link>
+            ) : (
+              <button type="button" className="btn btn--secondaire btn--bloc" onClick={onFermer}>
+                Retour à l'annonce
+              </button>
+            )}
           </div>
         )}
     </Feuille>

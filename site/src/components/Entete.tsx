@@ -1,6 +1,7 @@
 import { Heart, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { useEtat } from "../lib/compte";
 import { useFavoris } from "../lib/favoris";
 import { Logo } from "./Marque";
 
@@ -14,6 +15,7 @@ const LIENS = [
 export function Entete() {
   const [menu, setMenu] = useState(false);
   const { liste } = useFavoris();
+  const { compte } = useEtat();
   const { pathname } = useLocation();
 
   useEffect(() => {
@@ -34,13 +36,22 @@ export function Entete() {
           ))}
         </nav>
         <div className="entete__actions">
-          <Link to="/mon-espace" className="btn-icone entete__favoris" aria-label={`Mes favoris (${liste.length})`}>
+          <Link to={compte ? "/mon-espace?onglet=favoris" : "/mon-espace"} className="btn-icone entete__favoris" aria-label={`Mes favoris (${liste.length})`}>
             <Heart aria-hidden="true" size={20} />
             {liste.length > 0 && <span className="entete__compteur">{liste.length}</span>}
           </Link>
-          <Link to="/connexion" className="btn btn--texte entete__connexion">
-            Se connecter
-          </Link>
+          {compte ? (
+            <Link to="/mon-espace" className="btn btn--texte entete__connexion entete__compte">
+              <span className="entete__initiale" aria-hidden="true">
+                {compte.nom[0]}
+              </span>
+              Mon espace
+            </Link>
+          ) : (
+            <Link to="/connexion" className="btn btn--texte entete__connexion">
+              Se connecter
+            </Link>
+          )}
           <Link to="/proprietaires/deposer" className="btn btn--secondaire entete__deposer">
             Déposer un bien
           </Link>
@@ -71,8 +82,8 @@ export function Entete() {
               <Link to="/proprietaires/deposer" className="btn btn--secondaire btn--bloc">
                 Déposer un bien
               </Link>
-              <Link to="/connexion" className="btn btn--texte btn--bloc">
-                Se connecter
+              <Link to={compte ? "/mon-espace" : "/connexion"} className="btn btn--texte btn--bloc">
+                {compte ? "Mon espace" : "Se connecter"}
               </Link>
             </div>
           </nav>
