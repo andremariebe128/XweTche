@@ -2,15 +2,15 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ANNONCES, TYPES, slugQuartier } from "../data/annonces";
 import { majEtat, type Visite } from "../lib/compte";
+import { useParametres } from "../lib/parametres";
 import { Feuille } from "./Feuille";
 import { Porte } from "./Marque";
 
-const MOTIFS = ["Prix", "État du logement", "Quartier", "Taille", "Photos non conformes", "Autre"];
-export const PLAFOND_VISITES_GRATUITES = 5;
 
 // Retour obligatoire après la visite : « Satisfait » ou « Pas satisfait » avec motif (5.3, LOC-06).
 export function RetourVisite({ visite, onFermer, onCandidater }: { visite: Visite; onFermer: () => void; onCandidater: () => void }) {
   const annonce = ANNONCES.find((a) => a.ref === visite.ref);
+  const { motifsVisite, plafondVisites } = useParametres();
   const [avis, setAvis] = useState<"satisfait" | "pas-satisfait" | null>(null);
   const [motif, setMotif] = useState("");
   const [fait, setFait] = useState(false);
@@ -20,7 +20,7 @@ export function RetourVisite({ visite, onFermer, onCandidater }: { visite: Visit
     if (!valide) return;
     majEtat((e) => ({
       ...e,
-      visitesGratuites: avis === "pas-satisfait" ? Math.min(e.visitesGratuites + 1, PLAFOND_VISITES_GRATUITES) : e.visitesGratuites,
+      visitesGratuites: avis === "pas-satisfait" ? Math.min(e.visitesGratuites + 1, plafondVisites) : e.visitesGratuites,
       visites: e.visites.map((v) => (v.id === visite.id ? { ...v, statut: avis!, motif: avis === "pas-satisfait" ? motif : undefined } : v)),
     }));
     setFait(true);
@@ -90,7 +90,7 @@ export function RetourVisite({ visite, onFermer, onCandidater }: { visite: Visit
           <fieldset className="champ champ--groupe">
             <legend>Pourquoi ?</legend>
             <div className="pastilles pastilles--multi">
-              {MOTIFS.map((m) => (
+              {motifsVisite.map((m) => (
                 <button key={m} type="button" className="pastille" aria-pressed={motif === m} onClick={() => setMotif(m)}>
                   {m}
                 </button>

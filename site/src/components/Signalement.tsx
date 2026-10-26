@@ -1,6 +1,7 @@
 import { Flag } from "lucide-react";
 import { useState } from "react";
 import { TYPES, type Annonce } from "../data/annonces";
+import { recevoirSignalement } from "../lib/agence";
 import { Feuille } from "./Feuille";
 
 const MOTIFS_ANNONCE = [
@@ -76,7 +77,10 @@ export function Signalement({ annonce, onFermer }: { annonce?: Annonce; onFermer
         className="formulaire"
         onSubmit={(e) => {
           e.preventDefault();
-          if (valide) setNumero(`SG-${Math.floor(1000 + Math.random() * 9000)}`);
+          if (!valide) return;
+          const n = `SG-${Math.floor(1000 + Math.random() * 9000)}`;
+          recevoirSignalement({ numero: n, date: new Date().toISOString(), motif, detail, ref: annonce?.ref, tel: tel || undefined });
+          setNumero(n);
         }}
       >
         <fieldset className="champ champ--groupe">

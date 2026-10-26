@@ -7,6 +7,8 @@ import { Vide } from "../components/Vide";
 import { ANNONCES, TYPES, commission } from "../data/annonces";
 import { code, majEtat, telMasque, useEtat, type Operateur, type Recu } from "../lib/compte";
 import { fcfa } from "../lib/format";
+import { libelleCommission, lireParametres } from "../lib/parametres";
+import { journaliser, majAgence } from "../lib/agence";
 import { useTitre } from "../lib/titre";
 
 const OPERATEURS: Operateur[] = ["MTN MoMo", "Moov Money", "Celtiis Cash"];
@@ -96,7 +98,7 @@ export default function Bail() {
               <dd>{fcfa(annonce.loyer * annonce.cautionMois)}</dd>
             </div>
             <div className="bail__commission">
-              <dt>Commission Xwé Tché (½ mois)</dt>
+              <dt>Commission Xwé Tché ({libelleCommission()})</dt>
               <dd>{fcfa(montant)}</dd>
             </div>
           </dl>
@@ -197,10 +199,29 @@ function Paiement({ refAnnonce, montant, onPaye }: { refAnnonce: string; montant
         recus: [recu, ...e.recus],
         candidatures: e.candidatures.map((c) => (c.ref === refAnnonce ? { ...c, statut: "payee" } : c)),
       }));
+      // Côté agence : le bail passe en « payé » et le paiement entre dans le suivi des commissions
+      majAgence((a) => ({
+        ...a,
+        baux: [
+          {
+            id: recu.numero,
+            ref: refAnnonce,
+            locataire: compte?.nom ?? "",
+            proprietaire: "",
+            loyer: Math.round(montant / lireParametres().commission),
+            commission: montant,
+            statut: "paye",
+            signeLe: maintenant.toISOString(),
+            paiement: { moyen: operateur, date: recu.date, recu: recu.numero, transaction: recu.transaction },
+          },
+          ...a.baux.filter((b) => !(b.ref === refAnnonce && b.locataire === compte?.nom)),
+        ],
+      }));
+      journaliser(`Paiement ${operateur} reçu`, `${refAnnonce} · ${fcfa(montant)}`);
       onPaye(recu);
     }, 6000);
     return () => clearTimeout(t);
-  }, [phase, operateur, numero, montant, refAnnonce, onPaye]);
+  }, [phase, operateur, numero, montant, refAnnonce, onPaye, compte?.nom]);
 
   if (phase === "attente")
     return (

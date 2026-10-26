@@ -34,7 +34,7 @@ export default function Recu() {
   const d = new Date(recu.date);
   const lignes: [string, React.ReactNode][] = [
     ["Montant", fcfa(recu.montant)],
-    ["Objet", `Commission de location (½ mois de loyer)`],
+    ["Objet", "Commission de location"],
     ["Logement", annonce ? `${TYPES[annonce.type]} · ${annonce.quartier} · Réf. ${annonce.ref}` : `Réf. ${recu.ref}`],
     ["Payé par", compte?.nom ?? ""],
     ["Moyen de paiement", `${recu.operateur} · ${telMasque(recu.tel)}`],

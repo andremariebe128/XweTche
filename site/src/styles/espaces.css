@@ -939,3 +939,21 @@ a.ligne-bien__titre:hover {
 .depot__suivant {
   margin-top: var(--s3);
 }
+
+/* ================= Bannière d'information (publiée depuis le back-office) ================= */
+
+.banniere {
+  background: var(--lagune-50);
+  color: var(--lagune-700);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.banniere .wrap {
+  padding-top: var(--s2);
+  padding-bottom: var(--s2);
+}
+.chargement {
+  min-height: 100vh;
+  background: var(--doux);
+}
