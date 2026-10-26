@@ -144,7 +144,7 @@ export function Terrain() {
   const a = useAgence();
   const membre = useMembre();
   const [resultat, setResultat] = useState<Dossier | null>(null);
-  const agents = a.equipe.filter((m) => m.role === "terrain" && m.actif).map((m) => m.nom);
+  const agents = a.equipe.filter((m) => m.role === "terrain" && m.statut === "actif").map((m) => m.nom);
   const estTerrain = membre?.role === "terrain";
   const missions = a.dossiers.filter((d) => d.statut === "controle" && (!estTerrain || d.agentTerrain === membre?.nom));
   const visitesAgent = estTerrain ? a.visites.filter((v) => v.statut === "prevue" && v.agent === membre?.nom) : [];

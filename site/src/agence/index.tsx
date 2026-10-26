@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import "../styles/agence.css";
 import { Contenus, Equipe, Journal, Messages, ParametresPage, Signalements } from "./Administration";
-import ConnexionAgence from "./Connexion";
+import ConnexionAgence, { Invitation } from "./Connexion";
 import { DossierEtude, FileEtude } from "./Etude";
 import GabaritAgence from "./Gabarit";
 import { Annonces, Baux, Terrain, Utilisateurs, Visites } from "./Operations";
@@ -13,6 +13,7 @@ export default function RoutesAgence() {
   return (
     <Routes>
       <Route path="connexion" element={<ConnexionAgence />} />
+      <Route path="invitation/:jeton" element={<Invitation />} />
       <Route element={<GabaritAgence />}>
         <Route index element={<Tableau />} />
         <Route path="etude" element={<Acces module="etude"><FileEtude /></Acces>} />

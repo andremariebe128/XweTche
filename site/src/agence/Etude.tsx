@@ -279,7 +279,7 @@ export function DossierEtude() {
         </aside>
       </div>
 
-      {decision === "valider" && <Valider dossier={d} equipeTerrain={a.equipe.filter((m) => m.role === "terrain" && m.actif).map((m) => m.nom)} onFermer={() => setDecision(null)} etudiePar={membre?.nom} />}
+      {decision === "valider" && <Valider dossier={d} equipeTerrain={a.equipe.filter((m) => m.role === "terrain" && m.statut === "actif").map((m) => m.nom)} onFermer={() => setDecision(null)} etudiePar={membre?.nom} />}
       {(decision === "corriger" || decision === "refuser") && (
         <Motiver
           dossier={d}

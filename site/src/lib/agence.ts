@@ -1,4 +1,4 @@
-import { majEtat, type Operateur, type StatutBien } from "./compte";
+import { majEtat, telLisible, type Operateur, type StatutBien } from "./compte";
 import { lireParametres } from "./parametres";
 import { creerStore } from "./stockage";
 
@@ -50,9 +50,17 @@ export interface Membre {
   id: string;
   nom: string;
   tel: string;
+  email?: string;
   role: RoleAgence;
-  actif: boolean;
+  statut: StatutMembre;
+  // Lien d'invitation envoyé par SMS et/ou e-mail ; un nouvel envoi rend l'ancien lien inutilisable.
+  invitation?: { jeton: string; envoyeLe: string; expireLe: string; par: string; canaux: CanalInvitation[] };
 }
+
+export type CanalInvitation = "SMS" | "E-mail";
+
+// Accès sur invitation (BO-12) : le responsable invite, la personne active son accès avec le lien, l'accès peut être révoqué.
+export type StatutMembre = "invite" | "actif" | "revoque";
 
 export type StatutDossier = "en-etude" | "a-corriger" | "controle" | "en-ligne" | "refusee" | "louee";
 
@@ -191,16 +199,44 @@ function dossier(p: Partial<Dossier> & Pick<Dossier, "ref" | "type" | "quartier"
   };
 }
 
+const DUREE_INVITATION = 72 * h;
+
+function invitationNeuve(par: string, canaux: CanalInvitation[], envoyeLe = new Date().toISOString()) {
+  const jeton = Array.from({ length: 3 }, ident).join("");
+  return { jeton, envoyeLe, expireLe: new Date(new Date(envoyeLe).getTime() + DUREE_INVITATION).toISOString(), par, canaux };
+}
+
+// Messages d'invitation, modifiables dans « Modèles de messages ».
+const MODELES_INVITATION: Modele[] = [
+  { id: "invitation-sms", nom: "Invitation membre", canal: "SMS", texte: "XweTche : {par} vous invite au back-office avec le rôle « {role} ». Activez votre accès avant le {expire} : {lien}" },
+  {
+    id: "invitation-email",
+    nom: "Invitation membre",
+    canal: "E-mail",
+    texte:
+      "Objet : Votre accès au back-office Xwé Tché\n\nBonjour {prenom},\n\n{par} vous invite à rejoindre le back-office Xwé Tché avec le rôle « {role} ».\n\nActivez votre accès avec ce lien, valable jusqu'au {expire} : {lien}\n\nVous recevrez un code par SMS au {tel} pour confirmer. Si vous n'attendiez pas cette invitation, ignorez ce message.\n\nL'équipe Xwé Tché",
+  },
+];
+
 function donneesInitiales(): Agence {
   const equipe: Membre[] = [
-    { id: "m1", nom: "Clarisse Ahouandjinou", tel: "0161000001", role: "admin", actif: true },
-    { id: "m2", nom: "Fabrice Dossa", tel: "0161000002", role: "etude", actif: true },
-    { id: "m3", nom: "Nadège Kpadonou", tel: "0161000003", role: "etude", actif: true },
-    { id: "m4", nom: "Serge Houngbo", tel: "0161000004", role: "terrain", actif: true },
-    { id: "m5", nom: "Rachidatou Bello", tel: "0161000005", role: "terrain", actif: true },
-    { id: "m6", nom: "Brice Tossou", tel: "0161000006", role: "finance", actif: true },
-    { id: "m7", nom: "Mireille Zinsou", tel: "0161000007", role: "support", actif: true },
-    { id: "m8", nom: "Ulrich Agossou", tel: "0161000008", role: "terrain", actif: false },
+    { id: "m1", nom: "Clarisse Ahouandjinou", tel: "0161000001", email: "clarisse@xwetche.bj", role: "admin", statut: "actif" },
+    { id: "m2", nom: "Fabrice Dossa", tel: "0161000002", email: "fabrice@xwetche.bj", role: "etude", statut: "actif" },
+    { id: "m3", nom: "Nadège Kpadonou", tel: "0161000003", email: "nadege@xwetche.bj", role: "etude", statut: "actif" },
+    { id: "m4", nom: "Serge Houngbo", tel: "0161000004", email: "serge@xwetche.bj", role: "terrain", statut: "actif" },
+    { id: "m5", nom: "Rachidatou Bello", tel: "0161000005", email: "rachidatou@xwetche.bj", role: "terrain", statut: "actif" },
+    { id: "m6", nom: "Brice Tossou", tel: "0161000006", email: "brice@xwetche.bj", role: "finance", statut: "actif" },
+    { id: "m7", nom: "Mireille Zinsou", tel: "0161000007", email: "mireille@xwetche.bj", role: "support", statut: "actif" },
+    { id: "m8", nom: "Ulrich Agossou", tel: "0161000008", email: "ulrich@xwetche.bj", role: "terrain", statut: "revoque" },
+    {
+      id: "m9",
+      nom: "Pélagie Akakpo",
+      tel: "0161000009",
+      email: "pelagie.akakpo@gmail.com",
+      role: "support",
+      statut: "invite",
+      invitation: invitationNeuve("Clarisse Ahouandjinou", ["SMS", "E-mail"], ilYa(5)),
+    },
   ];
   const dossiers: Dossier[] = [
     dossier({ ref: "XT-0415", type: "Studio", quartier: "Cadjèhoun", loyer: 70000, proprietaire: "Koffi Agbo", reperes: "Derrière la station Oryx, portail gris", soumisLe: ilYa(17), statut: "en-etude" }),
@@ -261,6 +297,7 @@ function donneesInitiales(): Agence {
     { id: ident(), numero: "SG-4061", date: ilYa(300), motif: "Autre", detail: "Je voulais juste savoir si on peut visiter le dimanche.", statut: "rejete", assigne: "Mireille Zinsou", decision: "Pas un signalement : réponse envoyée par le support." },
   ];
   const modeles: Modele[] = [
+    ...MODELES_INVITATION,
     { id: "visite-confirmee", nom: "Visite confirmée", canal: "SMS", texte: "XweTche : visite confirmée le {date} à {heure}. Code {code}. Adresse : {adresse}. Ne payez rien avant la visite." },
     { id: "visite-rappel", nom: "Rappel la veille", canal: "WhatsApp", texte: "Bonjour {prenom}, rappel de votre visite demain à {heure} ({quartier}). Votre agent : {agent}. Empêché ? Annulez avant {limite}." },
     { id: "avis", nom: "Avis après visite", canal: "SMS", texte: "XweTche : comment s'est passée la visite de {ref} ? Répondez sur {lien}. « Pas satisfait » = prochaine visite gratuite." },
@@ -286,9 +323,77 @@ export const useAgence = store.use;
 export const majAgence = store.maj;
 export const reinitialiserAgence = store.reinitialiser;
 
+// Données enregistrées avant les invitations : l'ancien drapeau « actif » devient un statut, les modèles d'invitation sont ajoutés.
+if (store.lire().equipe.some((m) => !m.statut))
+  majAgence((a) => ({ ...a, equipe: a.equipe.map((m) => (m.statut ? m : { ...m, statut: (m as Membre & { actif?: boolean }).actif ? "actif" : "revoque" })) }));
+if (!store.lire().modeles.some((m) => m.id === "invitation-sms")) majAgence((a) => ({ ...a, modeles: [...MODELES_INVITATION, ...a.modeles] }));
+
+// Un accès révoqué ferme la session immédiatement.
 export function useMembre() {
   const a = useAgence();
-  return a.equipe.find((m) => m.id === a.session) ?? null;
+  return a.equipe.find((m) => m.id === a.session && m.statut === "actif") ?? null;
+}
+
+export const lienInvitation = (jeton: string) => `${window.location.origin}/agence/invitation/${jeton}`;
+export const invitationExpiree = (m: Membre) => !!m.invitation && new Date(m.invitation.expireLe).getTime() < Date.now();
+
+export function membreParInvitation(jeton: string | undefined) {
+  return store.lire().equipe.find((m) => m.statut === "invite" && m.invitation?.jeton === jeton) ?? null;
+}
+
+const nomSession = () => {
+  const a = store.lire();
+  return a.equipe.find((m) => m.id === a.session)?.nom ?? "Système";
+};
+
+const majMembre = (id: string, f: (m: Membre) => Membre) => majAgence((a) => ({ ...a, equipe: a.equipe.map((m) => (m.id === id ? f(m) : m)) }));
+
+const canauxDisponibles = (m: Pick<Membre, "email">, canaux: CanalInvitation[]) => canaux.filter((c) => c === "SMS" || !!m.email);
+
+// Texte réellement envoyé, construit à partir du modèle du canal.
+export function messageInvitation(m: Membre, canal: CanalInvitation) {
+  const modele = store.lire().modeles.find((x) => x.id === (canal === "SMS" ? "invitation-sms" : "invitation-email"));
+  if (!modele || !m.invitation) return "";
+  const valeurs: Record<string, string> = {
+    prenom: m.nom.split(" ")[0],
+    par: m.invitation.par,
+    role: ROLES_AGENCE[m.role],
+    lien: lienInvitation(m.invitation.jeton),
+    expire: dateFr(m.invitation.expireLe),
+    tel: telLisible(m.tel),
+  };
+  return modele.texte.replace(/\{(\w+)\}/g, (tout, cle: string) => valeurs[cle] ?? tout);
+}
+
+export function inviterMembre(p: { nom: string; tel: string; email?: string; role: RoleAgence; canaux: CanalInvitation[] }) {
+  const { canaux, ...infos } = p;
+  const membre: Membre = { id: `m${Date.now()}`, ...infos, statut: "invite", invitation: invitationNeuve(nomSession(), canauxDisponibles(infos, canaux)) };
+  majAgence((a) => ({ ...a, equipe: [...a.equipe, membre] }));
+  journaliser("Invitation envoyée", `${p.nom} · ${ROLES_AGENCE[p.role]} · ${membre.invitation!.canaux.join(" et ")}`);
+  return membre;
+}
+
+export function renvoyerInvitation(id: string, canaux?: CanalInvitation[]) {
+  const par = nomSession();
+  majMembre(id, (m) => ({ ...m, statut: "invite", invitation: invitationNeuve(par, canauxDisponibles(m, canaux ?? m.invitation?.canaux ?? ["SMS", "E-mail"])) }));
+  const m = store.lire().equipe.find((x) => x.id === id);
+  if (m) journaliser("Nouveau lien d'invitation envoyé", `${m.nom} · ${ROLES_AGENCE[m.role]} · ${m.invitation!.canaux.join(" et ")}`);
+}
+
+export function revoquerAcces(id: string) {
+  const m = store.lire().equipe.find((x) => x.id === id);
+  if (!m) return;
+  majMembre(id, (x) => ({ ...x, statut: "revoque", invitation: undefined }));
+  journaliser(m.statut === "invite" ? "Invitation annulée" : "Accès révoqué", `${m.nom} · ${ROLES_AGENCE[m.role]}`);
+}
+
+export function accepterInvitation(id: string) {
+  majAgence((a) => ({ ...a, session: id, equipe: a.equipe.map((m) => (m.id === id ? { ...m, statut: "actif", invitation: undefined } : m)) }));
+  journaliser("Invitation acceptée, accès activé", nomSession());
+}
+
+export function connecterMembre(id: string) {
+  majAgence((a) => ({ ...a, session: id }));
 }
 
 export function peut(role: RoleAgence | undefined, module: Module) {
