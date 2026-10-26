@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { Entete } from "./components/Entete";
 import { Pied, PiedEspace } from "./components/Pied";
@@ -18,6 +18,18 @@ import Legal from "./pages/Legal";
 import Louer from "./pages/Louer";
 import { DOCS_LEGAUX } from "./data/legal";
 import { useTitre } from "./lib/titre";
+import { useContenus } from "./lib/contenus";
+
+// Bannière d'information publiée depuis le back-office
+function Banniere() {
+  const { banniere } = useContenus();
+  if (!banniere.actif || !banniere.texte.trim()) return null;
+  return (
+    <div className="banniere" role="note">
+      <div className="wrap">{banniere.texte}</div>
+    </div>
+  );
+}
 
 function Gabarit() {
   const { pathname } = useLocation();
@@ -29,6 +41,7 @@ function Gabarit() {
       <a href="#contenu" className="sr-only">
         Aller au contenu
       </a>
+      <Banniere />
       <Entete />
       <main id="contenu">
         <Outlet />
@@ -39,6 +52,8 @@ function Gabarit() {
 }
 
 // Espaces connectés : en-tête réduit au rôle, pas de pied de page de présentation.
+const Agence = lazy(() => import("./agence"));
+
 function GabaritEspace() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -82,6 +97,14 @@ export default function App() {
         ))}
         <Route path="*" element={<Introuvable />} />
       </Route>
+      <Route
+        path="agence/*"
+        element={
+          <Suspense fallback={<div className="chargement" aria-busy="true" />}>
+            <Agence />
+          </Suspense>
+        }
+      />
       <Route element={<GabaritEspace />}>
         <Route path="connexion" element={<Connexion />} />
         <Route path="mon-espace" element={<MonEspace />} />

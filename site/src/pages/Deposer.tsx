@@ -4,9 +4,11 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { CoutTotal } from "../components/CoutTotal";
 import { Vide } from "../components/Vide";
 import { EQUIPEMENTS } from "../components/Equipements";
-import { QUARTIERS, TYPES, type Annonce, type Equipement, type TypeBien } from "../data/annonces";
+import { TYPES, type Annonce, type Equipement, type TypeBien } from "../data/annonces";
+import { recevoirDossier } from "../lib/agence";
 import { code, majEtat, useEtat } from "../lib/compte";
 import { fcfa } from "../lib/format";
+import { useParametres } from "../lib/parametres";
 import { useTitre } from "../lib/titre";
 
 // Ordre de prise de vue recommandé (PRO-02) : le locataire découvre le logement comme s'il le visitait.
@@ -65,6 +67,7 @@ const ETAPES = ["Le bien", "Photos", "Montants", "Description", "Documents", "V�
 export default function Deposer() {
   useTitre("Déposer un bien");
   const { compte } = useEtat();
+  const { quartiers } = useParametres();
   const navigate = useNavigate();
   const [b, setB] = useState<Brouillon>(lireBrouillon);
   const [etape, setEtape] = useState(0);
@@ -127,7 +130,27 @@ export default function Deposer() {
   }
 
   function envoyer() {
-    const ref = `XT-0${420 + Math.floor(Math.random() * 80)}`;
+    const ref = `XT-0${430 + Math.floor(Math.random() * 70)}`;
+    // Le dossier arrive dans la file d'étude de l'agence
+    recevoirDossier({
+      ref,
+      type: TYPES[b.type as TypeBien],
+      quartier: b.quartier,
+      reperes: b.adresse,
+      loyer,
+      avanceMois: b.avanceMois,
+      cautionMois: b.cautionMois,
+      charges: Number(b.charges) || 0,
+      proprietaire: compte!.nom,
+      telProprietaire: compte!.tel,
+      gestionnaire: b.gestionnaire,
+      soumisLe: new Date().toISOString(),
+      statut: "en-etude",
+      photos: b.photos.length,
+      documents: { identite: !!b.pieces.identite, propriete: !!b.pieces.propriete, ...(b.gestionnaire ? { mandat: !!b.pieces.mandat } : {}) },
+      auto: { photosNettes: true, champsComplets: true, doublonPhoto: false, doublonAdresse: false },
+      checklist: {},
+    });
     majEtat((e) => ({
       ...e,
       biens: [
@@ -230,7 +253,7 @@ export default function Deposer() {
                 <label htmlFor="dp-quartier">Quartier</label>
                 <select id="dp-quartier" value={b.quartier} onChange={(e) => maj({ quartier: e.target.value })}>
                   <option value="">Choisir</option>
-                  {QUARTIERS.map((q) => (
+                  {quartiers.map((q) => (
                     <option key={q}>{q}</option>
                   ))}
                 </select>

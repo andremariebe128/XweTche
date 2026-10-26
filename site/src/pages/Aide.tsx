@@ -2,18 +2,19 @@ import { ChevronDown, MessageCircle, Search } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Vide } from "../components/Vide";
-import { THEMES } from "../data/aide";
+import { useContenus } from "../lib/contenus";
 import { useTitre } from "../lib/titre";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 export default function Aide() {
+  const { faq } = useContenus();
   useTitre("Aide");
   const [texte, setTexte] = useState("");
   const [theme, setTheme] = useState<string | null>(null);
 
   const t = norm(texte.trim());
-  const themes = THEMES.filter((th) => !theme || th.id === theme)
+  const themes = faq.filter((th) => !theme || th.id === theme)
     .map((th) => ({ ...th, questions: th.questions.filter((x) => !t || norm(`${x.q} ${x.r}`).includes(t)) }))
     .filter((th) => th.questions.length > 0);
   const total = themes.reduce((n, th) => n + th.questions.length, 0);
@@ -35,7 +36,7 @@ export default function Aide() {
         <button type="button" className="pastille" aria-pressed={!theme} onClick={() => setTheme(null)}>
           Tous les thèmes
         </button>
-        {THEMES.map((th) => (
+        {faq.map((th) => (
           <button key={th.id} type="button" className="pastille" aria-pressed={theme === th.id} onClick={() => setTheme(th.id)}>
             {th.titre}
           </button>

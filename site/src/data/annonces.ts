@@ -1,3 +1,5 @@
+import { lireParametres } from "../lib/parametres";
+
 // Données d'exemple : textes, prix et quartiers fictifs, à remplacer par l'API.
 
 export type TypeBien =
@@ -304,7 +306,7 @@ export const QUARTIERS = [
   "Calavi Kpota",
 ];
 
-export function commission(a: Annonce, taux = 0.5) {
+export function commission(a: Annonce, taux = lireParametres().commission) {
   return Math.round(a.loyer * taux);
 }
 

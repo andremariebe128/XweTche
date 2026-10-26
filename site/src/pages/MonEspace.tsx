@@ -5,12 +5,13 @@ import { CarteAnnonce } from "../components/CarteAnnonce";
 import { Candidater } from "../components/Candidater";
 import { Porte } from "../components/Marque";
 import { Photo } from "../components/Photo";
-import { PLAFOND_VISITES_GRATUITES, RetourVisite } from "../components/RetourVisite";
+import { RetourVisite } from "../components/RetourVisite";
 import { Badge } from "../components/Statut";
 import { Vide } from "../components/Vide";
 import { ANNONCES, TYPES } from "../data/annonces";
 import { dateHeure, deconnecter, majEtat, telLisible, useEtat, type Candidature, type Visite } from "../lib/compte";
 import { useFavoris } from "../lib/favoris";
+import { useParametres } from "../lib/parametres";
 import { fcfa, pluriel } from "../lib/format";
 import { useTitre } from "../lib/titre";
 import { EspaceProprietaire } from "./EspaceProprietaire";
@@ -95,6 +96,7 @@ function EspaceLocataire() {
   useTitre("Mon espace");
   const etat = useEtat();
   const { liste } = useFavoris();
+  const { plafondVisites } = useParametres();
   const [params, setParams] = useSearchParams();
   const onglet = (ONGLETS.find(([k]) => k === params.get("onglet"))?.[0] ?? "visites") as Onglet;
   const compteurs: Record<Onglet, number> = {
@@ -110,7 +112,7 @@ function EspaceLocataire() {
     <div className="wrap edito">
       <EnteteEspace titre={`Bonjour ${prenom}`} sousTitre="Mon espace locataire">
         {/* Le compteur de visites gratuites reste visible en permanence (LOC-07). */}
-        <span className="compteur-visites compteur-visites--grand" title={`Jusqu'à ${PLAFOND_VISITES_GRATUITES} visites gratuites en cours`}>
+        <span className="compteur-visites compteur-visites--grand" title={`Jusqu'à ${plafondVisites} visites gratuites en cours`}>
           <Porte taille={14} /> {pluriel(etat.visitesGratuites, "visite gratuite", "visites gratuites")}
         </span>
       </EnteteEspace>
