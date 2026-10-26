@@ -97,6 +97,55 @@
   font-size: 14px;
 }
 
+/* ================= Gabarit des espaces ================= */
+
+main.espace {
+  min-height: calc(100vh - 72px - 64px);
+  background: var(--doux);
+}
+main.espace .carte {
+  background: var(--blanc);
+}
+/* Peu de liens dans un espace : la navigation tient dès la tablette */
+@media (min-width: 900px) {
+  .entete--espace .entete__nav {
+    display: flex;
+  }
+  .entete--espace .entete__burger {
+    display: none;
+  }
+  .entete--espace .entete__actions {
+    margin-left: 0;
+  }
+}
+.pied-espace {
+  border-top: 1px solid var(--bord);
+  background: var(--blanc);
+  font-size: 14px;
+  color: var(--gris);
+}
+.pied-espace__ligne {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s2) var(--s5);
+  min-height: 64px;
+  padding-top: var(--s3);
+  padding-bottom: var(--s3);
+}
+.pied-espace nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+}
+.pied-espace a {
+  color: var(--gris);
+}
+.pied-espace a:hover {
+  color: var(--lagune);
+}
+
 /* ================= En-tête connecté ================= */
 
 .entete__compte {

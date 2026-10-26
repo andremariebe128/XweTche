@@ -194,7 +194,7 @@ export default function Connexion() {
                   </span>
                 </label>
               </div>
-              <span className="aide">Vous pourrez changer de rôle plus tard.</span>
+              <span className="aide">Un compte locataire sert à louer, un compte propriétaire à mettre en location.</span>
             </fieldset>
             <button type="submit" className="btn btn--principal btn--bloc">
               Créer mon compte

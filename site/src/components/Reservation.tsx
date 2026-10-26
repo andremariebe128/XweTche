@@ -32,6 +32,18 @@ export function Reservation({ annonce, onFermer }: { annonce: Annonce; onFermer:
   const pris = (c: string) => (c.charCodeAt(1) + jour) % 4 === 0;
   const telValide = tel.replace(/\D/g, "").length >= 8;
 
+  if (compte?.role === "proprietaire")
+    return (
+      <Feuille titre="Réservé aux locataires" onFermer={onFermer}>
+        <div className="confirmation">
+          <p className="gris">Vous êtes connecté avec un compte propriétaire. Les visites se réservent avec un compte locataire.</p>
+          <button type="button" className="btn btn--secondaire btn--bloc" onClick={onFermer}>
+            Fermer
+          </button>
+        </div>
+      </Feuille>
+    );
+
   return (
     <Feuille
       titre={etape === 1 ? "Choisissez un créneau" : etape === 2 ? "Votre numéro de téléphone" : "Visite demandée"}

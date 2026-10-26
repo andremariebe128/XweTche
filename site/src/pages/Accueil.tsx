@@ -7,6 +7,7 @@ import { Photo } from "../components/Photo";
 import { Recherche } from "../components/Recherche";
 import { Badge } from "../components/Statut";
 import { ANNONCES, QUARTIERS, TYPES, slugQuartier } from "../data/annonces";
+import { useEtat } from "../lib/compte";
 import { fcfa } from "../lib/format";
 
 const vedette = ANNONCES[0];
@@ -20,6 +21,7 @@ const quartiers = QUARTIERS.map((q) => {
   .sort((a, b) => b.nombre - a.nombre);
 
 export default function Accueil() {
+  const { compte } = useEtat();
   return (
     <>
       <Hero />
@@ -68,7 +70,7 @@ export default function Accueil() {
       </section>
 
       <Jamais />
-      <AppelProprietaires />
+      {compte?.role !== "locataire" && <AppelProprietaires />}
     </>
   );
 }

@@ -2,6 +2,7 @@ import { ArrowLeft, Camera, Check, FileText, MapPin, Upload, X } from "lucide-re
 import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { CoutTotal } from "../components/CoutTotal";
+import { Vide } from "../components/Vide";
 import { EQUIPEMENTS } from "../components/Equipements";
 import { QUARTIERS, TYPES, type Annonce, type Equipement, type TypeBien } from "../data/annonces";
 import { code, majEtat, useEtat } from "../lib/compte";
@@ -90,7 +91,21 @@ export default function Deposer() {
     return () => liste.forEach((u) => URL.revokeObjectURL(u));
   }, []);
 
-  if (!compte || compte.role !== "proprietaire") return <Navigate to="/connexion?role=proprietaire&retour=/proprietaires/deposer" replace />;
+  if (compte?.role === "locataire")
+    return (
+      <div className="wrap edito">
+        <Vide
+          titre="Réservé aux comptes propriétaires"
+          texte="Votre compte est un compte locataire. Pour mettre un bien en location, créez un compte propriétaire avec un autre numéro."
+          action={
+            <Link to="/mon-espace" className="btn btn--secondaire">
+              Retour à mon espace
+            </Link>
+          }
+        />
+      </div>
+    );
+  if (!compte) return <Navigate to="/connexion?role=proprietaire&retour=/proprietaires/deposer" replace />;
 
   const maj = (p: Partial<Brouillon>) => setB((x) => ({ ...x, ...p }));
   const loyer = Number(b.loyer) || 0;

@@ -1,8 +1,12 @@
 import { Link } from "react-router-dom";
 import { QUARTIERS, slugQuartier } from "../data/annonces";
+import { useEtat } from "../lib/compte";
 import { Logo } from "./Marque";
 
 export function Pied() {
+  const { compte } = useEtat();
+  const locataire = compte?.role === "locataire";
+  const proprietaire = compte?.role === "proprietaire";
   return (
     <footer className="pied">
       <div className="wrap">
@@ -12,6 +16,7 @@ export function Pied() {
             <p>« Ma maison », en fon. Des logements vérifiés sur place, à Cotonou.</p>
           </div>
           <nav className="pied__colonnes" aria-label="Pied de page">
+            {!proprietaire && (
             <div>
               <h2>Louer</h2>
               <ul>
@@ -22,11 +27,12 @@ export function Pied() {
                 ))}
               </ul>
             </div>
+            )}
             <div>
               <h2>Xwé Tché</h2>
               <ul>
-                <li><Link to="/comment-ca-marche">Comment ça marche</Link></li>
-                <li><Link to="/proprietaires">Propriétaires</Link></li>
+                {!proprietaire && <li><Link to="/comment-ca-marche">Comment ça marche</Link></li>}
+                {!locataire && <li><Link to="/proprietaires">Propriétaires</Link></li>}
                 <li><Link to="/confiance">Confiance et sécurité</Link></li>
                 <li><Link to="/a-propos">À propos</Link></li>
                 <li><Link to="/aide">Aide</Link></li>
@@ -49,11 +55,28 @@ export function Pied() {
           <span className="pied__legal">
             <Link to="/cgu">CGU</Link>
             <Link to="/confidentialite">Confidentialité</Link>
-            <Link to="/charte-proprietaire">Charte propriétaire</Link>
+            {!locataire && <Link to="/charte-proprietaire">Charte propriétaire</Link>}
             <Link to="/remboursements">Remboursements</Link>
             <Link to="/mentions-legales">Mentions légales</Link>
           </span>
         </div>
+      </div>
+    </footer>
+  );
+}
+
+// Dans les espaces connectés, un pied réduit : l'essentiel sans le contenu de présentation du site.
+export function PiedEspace() {
+  return (
+    <footer className="pied-espace">
+      <div className="wrap pied-espace__ligne">
+        <span>© 2026 Xwé Tché</span>
+        <nav aria-label="Liens utiles">
+          <Link to="/aide">Aide</Link>
+          <Link to="/contact">Contact</Link>
+          <Link to="/cgu">CGU</Link>
+          <Link to="/confidentialite">Confidentialité</Link>
+        </nav>
       </div>
     </footer>
   );

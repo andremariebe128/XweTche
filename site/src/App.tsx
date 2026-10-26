@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { Entete } from "./components/Entete";
-import { Pied } from "./components/Pied";
+import { Pied, PiedEspace } from "./components/Pied";
 import Accueil from "./pages/Accueil";
 import Aide from "./pages/Aide";
 import APropos from "./pages/APropos";
@@ -38,6 +38,26 @@ function Gabarit() {
   );
 }
 
+// Espaces connectés : en-tête réduit au rôle, pas de pied de page de présentation.
+function GabaritEspace() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return (
+    <>
+      <a href="#contenu" className="sr-only">
+        Aller au contenu
+      </a>
+      <Entete espace />
+      <main id="contenu" className="espace">
+        <Outlet />
+      </main>
+      <PiedEspace />
+    </>
+  );
+}
+
 function PageAccueil() {
   useTitre("Logements vérifiés sur place au Bénin");
   return <Accueil />;
@@ -54,11 +74,6 @@ export default function App() {
         <Route path="comment-ca-marche" element={<CommentCaMarche />} />
         <Route path="proprietaires" element={<Proprietaires />} />
         <Route path="confiance" element={<Confiance />} />
-        <Route path="mon-espace" element={<MonEspace />} />
-        <Route path="connexion" element={<Connexion />} />
-        <Route path="proprietaires/deposer" element={<Deposer />} />
-        <Route path="bail/:ref" element={<Bail />} />
-        <Route path="recu/:numero" element={<Recu />} />
         <Route path="aide" element={<Aide />} />
         <Route path="contact" element={<Contact />} />
         <Route path="a-propos" element={<APropos />} />
@@ -66,6 +81,13 @@ export default function App() {
           <Route key={d.slug} path={d.slug} element={<Legal slug={d.slug} />} />
         ))}
         <Route path="*" element={<Introuvable />} />
+      </Route>
+      <Route element={<GabaritEspace />}>
+        <Route path="connexion" element={<Connexion />} />
+        <Route path="mon-espace" element={<MonEspace />} />
+        <Route path="proprietaires/deposer" element={<Deposer />} />
+        <Route path="bail/:ref" element={<Bail />} />
+        <Route path="recu/:numero" element={<Recu />} />
       </Route>
     </Routes>
   );

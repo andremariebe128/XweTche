@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Signalement } from "../components/Signalement";
 import { Badge } from "../components/Statut";
+import { useEtat } from "../lib/compte";
 import { useTitre } from "../lib/titre";
 
 export function CommentCaMarche() {
@@ -48,6 +49,7 @@ export function CommentCaMarche() {
 
 export function Proprietaires() {
   useTitre("Mettre un bien en location");
+  const { compte } = useEtat();
   return (
     <div className="wrap edito">
       <p className="eyebrow">Propriétaires et gestionnaires</p>
@@ -83,9 +85,15 @@ export function Proprietaires() {
         </ul>
         <p className="petit gris">[Liste définitive à arrêter avec le juriste.]</p>
       </div>
-      <Link to="/proprietaires/deposer" className="btn btn--principal" style={{ marginTop: "var(--s6)" }}>
-        Déposer un bien
-      </Link>
+      {compte?.role === "locataire" ? (
+        <p className="bandeau bandeau--info" style={{ marginTop: "var(--s6)" }}>
+          Vous êtes connecté avec un compte locataire. Pour mettre un bien en location, il faut un compte propriétaire distinct.
+        </p>
+      ) : (
+        <Link to="/proprietaires/deposer" className="btn btn--principal" style={{ marginTop: "var(--s6)" }}>
+          Déposer un bien
+        </Link>
+      )}
     </div>
   );
 }
