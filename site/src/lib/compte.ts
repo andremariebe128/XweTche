@@ -49,7 +49,7 @@ export interface AlerteRecherche {
   canal: "SMS" | "WhatsApp";
 }
 
-export type StatutBien = "en-etude" | "a-corriger" | "refusee" | "en-ligne" | "louee";
+export type StatutBien = "en-etude" | "a-corriger" | "controle" | "refusee" | "en-ligne" | "louee";
 
 export interface Candidat {
   id: string;

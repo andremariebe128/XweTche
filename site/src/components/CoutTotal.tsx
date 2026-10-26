@@ -1,13 +1,15 @@
 import { commission, totalEntree, type Annonce } from "../data/annonces";
 import { fcfa, pluriel } from "../lib/format";
+import { libelleCommission, useParametres } from "../lib/parametres";
 
 // Bloc « Coût total » : le locataire connaît tout avant de réserver (règle d'affichage 4.1).
 export function CoutTotal({ annonce }: { annonce: Annonce }) {
+  useParametres();
   const lignes: [string, string, number][] = [
     ["Loyer mensuel", "payé au propriétaire", annonce.loyer],
     ["Avance", `${pluriel(annonce.avanceMois, "mois", "mois")} de loyer, au propriétaire`, annonce.loyer * annonce.avanceMois],
     ["Caution", `${pluriel(annonce.cautionMois, "mois", "mois")}, restituée en fin de bail`, annonce.loyer * annonce.cautionMois],
-    ["Commission Xwé Tché", "½ mois, payée seulement à la signature", commission(annonce)],
+    ["Commission Xwé Tché", `${libelleCommission()}, payée seulement à la signature`, commission(annonce)],
   ];
   return (
     <section className="cout" aria-labelledby={`cout-${annonce.ref}`}>

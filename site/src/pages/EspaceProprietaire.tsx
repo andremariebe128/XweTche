@@ -7,6 +7,7 @@ import { Badge } from "../components/Statut";
 import { Vide } from "../components/Vide";
 import { dateCourte, dateHeure, heuresRestantes, majEtat, useEtat, type Bien, type Candidat } from "../lib/compte";
 import { fcfa, pluriel } from "../lib/format";
+import { alignerBiensSurAgence, journaliser, majDossier } from "../lib/agence";
 import { useTitre } from "../lib/titre";
 import { EnteteEspace } from "./MonEspace";
 
@@ -25,6 +26,9 @@ export function EspaceProprietaire() {
   const [params, setParams] = useSearchParams();
   const onglet = (ONGLETS.find(([k]) => k === params.get("onglet"))?.[0] ?? "biens") as Onglet;
   const envoye = params.get("envoye");
+  useEffect(() => {
+    alignerBiensSurAgence();
+  }, [compte?.tel]);
   const compteurs: Record<Onglet, number> = {
     biens: biens.length,
     agenda: biens.reduce((n, b) => n + b.visites.length, 0),
@@ -104,6 +108,8 @@ function BadgeBien({ bien }: { bien: Bien }) {
       return <Badge famille="neutre">En étude · {heuresRestantes(bien, maintenant)} h restantes</Badge>;
     case "a-corriger":
       return <Badge famille="action">Correction demandée</Badge>;
+    case "controle":
+      return <Badge famille="info">Validée · contrôle sur place à venir</Badge>;
     case "refusee":
       return <Badge famille="erreur">Refusée</Badge>;
     case "louee":
@@ -165,16 +171,13 @@ function MesBiens({ biens }: { biens: Bien[] }) {
                 <button
                   type="button"
                   className="btn btn--principal"
-                  onClick={() =>
-                    majBien(b.ref, (x) => ({
-                      ...x,
-                      statut: "en-etude",
-                      // Le temps passé en pause ne compte pas dans les 48 h
-                      soumisLe: new Date(new Date(x.soumisLe!).getTime() + (Date.now() - new Date(x.pauseLe!).getTime())).toISOString(),
-                      pauseLe: undefined,
-                      motif: undefined,
-                    }))
-                  }
+                  onClick={() => {
+                    // Le temps passé en pause ne compte pas dans les 48 h
+                    const decaler = (soumis: string, pause: string) => new Date(new Date(soumis).getTime() + (Date.now() - new Date(pause).getTime())).toISOString();
+                    majBien(b.ref, (x) => ({ ...x, statut: "en-etude", soumisLe: decaler(x.soumisLe!, x.pauseLe!), pauseLe: undefined, motif: undefined }));
+                    majDossier(b.ref, (x) => ({ ...x, statut: "en-etude", soumisLe: x.pauseLe ? decaler(x.soumisLe, x.pauseLe) : x.soumisLe, pauseLe: undefined, motif: undefined, auto: { ...x.auto, photosNettes: true } }));
+                    journaliser("Corrections renvoyées par le propriétaire", b.ref);
+                  }}
                 >
                   J'ai corrigé, renvoyer en étude
                 </button>

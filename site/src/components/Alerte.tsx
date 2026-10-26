@@ -1,8 +1,9 @@
 import { Bell } from "lucide-react";
 import { useState } from "react";
-import { QUARTIERS, TYPES, type Annonce, type TypeBien } from "../data/annonces";
+import { TYPES, type Annonce, type TypeBien } from "../data/annonces";
 import { id, majEtat, useEtat } from "../lib/compte";
 import { fcfa } from "../lib/format";
+import { useParametres } from "../lib/parametres";
 import { Feuille } from "./Feuille";
 import { Porte } from "./Marque";
 
@@ -26,6 +27,7 @@ export function Alerte({
   const [t, setT] = useState<string>(type ?? "");
   const [b, setB] = useState(budget ? String(budget) : "");
   const { compte } = useEtat();
+  const { quartiers } = useParametres();
   const [tel, setTel] = useState(compte?.tel ?? "");
   const [canal, setCanal] = useState<Canal>("sms");
   const [envoye, setEnvoye] = useState(false);
@@ -93,7 +95,7 @@ export function Alerte({
               <label htmlFor="alerte-q">Quartier</label>
               <select id="alerte-q" value={q} onChange={(e) => setQ(e.target.value)}>
                 <option value="">Tout Cotonou</option>
-                {QUARTIERS.map((x) => (
+                {quartiers.map((x) => (
                   <option key={x}>{x}</option>
                 ))}
               </select>
