@@ -1,0 +1,48 @@
+{
+  "name": "site",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "db:migrate": "node --env-file=.env db/migrate.mjs",
+    "db:seed": "node --env-file=.env db/migrate.mjs --seed",
+    "db:demo": "node --env-file=.env db/migrate.mjs --demo",
+    "db:generate-seed": "node db/generate-seed.mjs",
+    "api:dev": "node --env-file=.env --import tsx server/dev.ts",
+    "typecheck:api": "tsc -p tsconfig.server.json",
+    "dev:all": "echo 'Lancez deux terminaux : npm run api:dev et npm run dev'"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "@vercel/blob": "^2.8.2",
+    "lucide-react": "^0.511.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.2",
+    "sharp": "^0.35.5",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vercel/node": "^28.0.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "pg": "^8.23.1",
+    "tsx": "^4.23.15",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.3.5"
+  }
+}
