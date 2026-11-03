@@ -17,7 +17,7 @@ INSERT INTO quartiers (ville_id, nom, slug) VALUES
   ((SELECT id FROM villes WHERE slug = 'cotonou'), 'Gbégamey', 'gbegamey'),
   ((SELECT id FROM villes WHERE slug = 'cotonou'), 'Zogbo', 'zogbo'),
   ((SELECT id FROM villes WHERE slug = 'cotonou'), 'Missèbo', 'missebo'),
-  ((SELECT id FROM villes WHERE slug = 'cotonou'), 'Vêdoko', 'vedoko'),
+  ((SELECT id FROM villes WHERE slug = 'cotonou'), 'Vèdoko', 'vedoko'),
   ((SELECT id FROM villes WHERE slug = 'cotonou'), 'Sainte-Rita', 'sainte-rita'),
   ((SELECT id FROM villes WHERE slug = 'abomey-calavi'), 'Godomey', 'godomey'),
   ((SELECT id FROM villes WHERE slug = 'abomey-calavi'), 'Calavi Kpota', 'calavi-kpota')
@@ -88,9 +88,9 @@ Bonjour {prenom},
 
 {par} vous invite à rejoindre le back-office Xwé Tché avec le rôle « {role} ».
 
-Activez votre accès avec ce lien, valable jusqu''au {expire} : {lien}
+Ouvrez ce lien pour choisir votre mot de passe, avant le {expire} : {lien}
 
-Vous recevrez un code par SMS au {tel} pour confirmer. Si vous n''attendiez pas cette invitation, ignorez ce message.
+Si vous n''attendiez pas cette invitation, ignorez ce message.
 
 L''équipe Xwé Tché'),
   ('visite-confirmee', 'Visite confirmée', 'sms', 'XweTche : visite confirmée le {date} à {heure}. Code {code}. Adresse : {adresse}. Ne payez rien avant la visite.'),
@@ -129,7 +129,7 @@ INSERT INTO contenus_editoriaux (type, slug, theme, theme_titre, titre, texte, o
   ('faq', 'proprietaires-4', 'proprietaires', 'Propriétaires', 'Mon annonce a été refusée. Pourquoi ?', 'Le motif vous est toujours indiqué : photos floues, document manquant, montants incomplets… Corrigez le point demandé et renvoyez votre annonce en étude.', 3, 'publie'),
   ('faq', 'securite-1', 'securite', 'Sécurité', 'Quelqu''un me demande de payer avant la visite. Est-ce normal ?', 'Non, c''est une arnaque. Xwé Tché ne demande jamais de paiement avant la visite, ni votre code Mobile Money. Ne versez rien et signalez-le.', 0, 'publie'),
   ('faq', 'securite-2', 'securite', 'Sécurité', 'Comment reconnaître un message officiel de Xwé Tché ?', 'Nos SMS viennent uniquement de l''expéditeur « XweTche ». Notre compte WhatsApp est vérifié. Chaque annonce porte une référence du type XT-0412.', 1, 'publie'),
-  ('faq', 'compte-1', 'compte', 'Mon compte', 'Comment me connecter ?', 'Avec votre numéro de téléphone : vous recevez un code par SMS, sans mot de passe à retenir.', 0, 'publie'),
+  ('faq', 'compte-1', 'compte', 'Mon compte', 'Comment me connecter ?', 'Avec votre numéro de téléphone et le mot de passe choisi à l''inscription. En cas d''oubli, contactez le support Xwé Tché.', 0, 'publie'),
   ('faq', 'compte-2', 'compte', 'Mon compte', 'J''ai changé de numéro. Que faire ?', 'Contactez le support : nous vérifions votre identité avant de transférer votre compte vers le nouveau numéro.', 1, 'publie')
 ON CONFLICT (type, slug, langue) DO NOTHING;
 INSERT INTO contenus_editoriaux (type, slug, titre, texte, statut) VALUES

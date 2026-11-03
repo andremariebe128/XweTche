@@ -1,50 +1,52 @@
 import { z } from "zod";
-import { demanderOtp, exigerUtilisateur, fermerSession, normaliserTel, ouvrirSession, utilisateurCourant, verifierOtp } from "../auth.js";
-import { signer, verifierSignature } from "../crypto.js";
+import { exigerUtilisateur, fermerSession, normaliserTel, noterTentative, ouvrirSession, utilisateurCourant, verifierTentatives } from "../auth.js";
+import { hacherMotDePasse, verifierMotDePasse } from "../crypto.js";
 import { db, un } from "../db.js";
-import { erreur, get, patch, post } from "../http.js";
+import { erreur, get, patch, post, type Ctx } from "../http.js";
 
 const tel = z.string().min(8).max(20);
+const motDePasse = z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères.").max(128);
 
 export const compteFront = (u: { tel: string; nom: string; role_actif: string }) => ({ tel: u.tel, nom: u.nom, role: u.role_actif });
 
-// Étape 1 : envoi du code (AUT-01, AUT-02)
-post("/auth/otp", async (c) => {
-  const { tel: t } = await c.body(z.object({ tel }));
-  return demanderOtp(normaliserTel(t));
-});
+const ipDe = (c: Ctx) => (c.req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim().slice(0, 60) || "inconnu";
 
-// Étape 2 : vérification. Compte existant -> session ouverte. Sinon -> preuve à présenter à /auth/inscription.
-post("/auth/verifier", async (c) => {
-  const b = await c.body(z.object({ tel, code: z.string().regex(/^\d{6}$/, "6 chiffres attendus") }));
+// Connexion par numéro + mot de passe (AUT-01, AUT-02).
+post("/auth/connexion", async (c) => {
+  const b = await c.body(z.object({ tel, motDePasse }));
   const t = normaliserTel(b.tel);
-  if (!(await verifierOtp(t, b.code))) throw erreur(401, "Ce code n'est pas bon ou a expiré. Vérifiez-le ou demandez-en un nouveau.");
-  const u = await un<{ id: string; nom: string; tel: string; role_actif: string; statut: string; supprime_le: Date | null }>(
-    db, "SELECT id, nom, tel, role_actif, statut, supprime_le FROM utilisateurs WHERE tel = $1", [t]);
-  if (u && u.statut === "suspendu") throw erreur(403, "Ce compte est suspendu. Contactez le support Xwé Tché pour en savoir plus.", "suspendu");
-  if (u && !u.supprime_le) {
-    await ouvrirSession(c, { utilisateurId: u.id });
-    return { existe: true, compte: compteFront(u) };
-  }
-  return { existe: false, preuve: signer({ tel: t, but: "inscription" }, 15 * 60) };
+  const cle = `u:${t}`;
+  await verifierTentatives(cle);
+  const u = await un<{ id: string; nom: string; tel: string; role_actif: string; statut: string; supprime_le: Date | null; pin_hash: string | null }>(
+    db, "SELECT id, nom, tel, role_actif, statut, supprime_le, pin_hash FROM utilisateurs WHERE tel = $1", [t]);
+  const ok = !!u && !u.supprime_le && u.statut === "actif" && (await verifierMotDePasse(b.motDePasse, u.pin_hash));
+  await noterTentative(cle, ipDe(c), ok);
+  if (u?.statut === "suspendu") throw erreur(403, "Ce compte est suspendu. Contactez le support Xwé Tché pour en savoir plus.", "suspendu");
+  if (!ok) throw erreur(401, "Numéro ou mot de passe incorrect.");
+  await ouvrirSession(c, { utilisateurId: u!.id });
+  return { compte: compteFront(u!) };
 });
 
-// Étape 3 (nouveaux comptes) : nom et rôle (AUT-03)
+// Inscription : nom, numéro, rôle et mot de passe (AUT-03).
 post("/auth/inscription", async (c) => {
-  const b = await c.body(z.object({ preuve: z.string(), nom: z.string().trim().min(2).max(80), role: z.enum(["locataire", "proprietaire"]) }));
-  const p = verifierSignature<{ tel: string; but: string }>(b.preuve);
-  if (!p || p.but !== "inscription") throw erreur(401, "La vérification de votre numéro a expiré. Recommencez la connexion.");
+  const b = await c.body(z.object({ tel, nom: z.string().trim().min(2).max(80), role: z.enum(["locataire", "proprietaire"]), motDePasse }));
+  const t = normaliserTel(b.tel);
+  const existant = await un<{ id: string }>(db, "SELECT id FROM utilisateurs WHERE tel = $1 AND supprime_le IS NULL", [t]);
+  if (existant) throw erreur(409, "Un compte existe déjà avec ce numéro. Connectez-vous.");
+  const hash = await hacherMotDePasse(b.motDePasse);
   const r = await un<{ id: string; nom: string; tel: string; role_actif: string }>(
     db,
-    `INSERT INTO utilisateurs (tel, nom, roles, role_actif) VALUES ($1, $2, ARRAY[$3]::role_utilisateur[], $3)
-     ON CONFLICT (tel) DO UPDATE SET nom = EXCLUDED.nom, supprime_le = NULL, maj_le = now()
+    `INSERT INTO utilisateurs (tel, nom, roles, role_actif, pin_hash) VALUES ($1, $2, ARRAY[$3]::role_utilisateur[], $3, $4)
+     ON CONFLICT (tel) DO UPDATE SET nom = EXCLUDED.nom, roles = EXCLUDED.roles, role_actif = EXCLUDED.role_actif,
+       pin_hash = EXCLUDED.pin_hash, statut = 'actif', supprime_le = NULL, maj_le = now()
        WHERE utilisateurs.supprime_le IS NOT NULL
      RETURNING id, nom, tel, role_actif`,
-    [p.tel, b.nom, b.role]);
-  if (!r) throw erreur(409, "Un compte existe déjà avec ce numéro. Connectez-vous avec le code reçu.");
+    [t, b.nom, b.role, hash]);
+  if (!r) throw erreur(409, "Un compte existe déjà avec ce numéro. Connectez-vous.");
   await ouvrirSession(c, { utilisateurId: r.id });
   return { compte: compteFront(r) };
 });
+
 
 post("/auth/deconnexion", async (c) => {
   await fermerSession(c, false);

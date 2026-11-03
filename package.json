@@ -12,6 +12,7 @@
     "db:seed": "node --env-file=.env db/migrate.mjs --seed",
     "db:demo": "node --env-file=.env db/migrate.mjs --demo",
     "db:generate-seed": "node db/generate-seed.mjs",
+    "admin:creer": "node --env-file=.env --import tsx db/creer-admin.mjs",
     "api:dev": "node --env-file=.env --import tsx server/dev.ts",
     "typecheck:api": "tsc -p tsconfig.server.json",
     "dev:all": "echo 'Lancez deux terminaux : npm run api:dev et npm run dev'"

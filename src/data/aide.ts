@@ -121,7 +121,7 @@ export const THEMES: Theme[] = [
     questions: [
       {
         q: "Comment me connecter ?",
-        r: "Avec votre numéro de téléphone : vous recevez un code par SMS, sans mot de passe à retenir.",
+        r: "Avec votre numéro de téléphone et le mot de passe choisi à l'inscription. En cas d'oubli, contactez le support Xwé Tché.",
       },
       {
         q: "J'ai changé de numéro. Que faire ?",

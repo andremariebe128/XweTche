@@ -48,7 +48,7 @@ try {
   }
 
   if (seed) {
-    const fichiers = ["001_reference.sql", ...(demo ? ["002_demo.sql"] : [])];
+    const fichiers = ["001_reference.sql", ...(demo ? ["002_demo.sql", "003_demo_mots_de_passe.sql"] : [])];
     for (const f of fichiers) {
       await client.query(readFileSync(join(dossier, "seed", f), "utf8"));
       console.log(`+ seed/${f}`);

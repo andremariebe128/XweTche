@@ -4,9 +4,12 @@ import sharp from "sharp";
 import { randomBytes } from "node:crypto";
 
 const BASE = process.env.API ?? "http://localhost:3001/api";
+const MDP_DEMO = "Demo1234";
+const MDP_TEST = "Test1234";
 const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
 await db.connect();
 await db.query("DELETE FROM codes_otp");
+await db.query("DELETE FROM tentatives_connexion");
 let ok = 0, ko = 0;
 const verif = (nom, cond, detail = "") => { cond ? ok++ : ko++; console.log(`${cond ? "  ✔" : "  ✘"} ${nom}${cond ? "" : ` ${detail}`}`); };
 
@@ -24,13 +27,12 @@ class Client {
   get = (c) => this.appel("GET", c); post = (c, b) => this.appel("POST", c, b ?? {}); put = (c, b) => this.appel("PUT", c, b); patch = (c, b) => this.appel("PATCH", c, b); del = (c) => this.appel("DELETE", c);
 }
 async function connecter(c, tel, nom, role) {
-  const o = await c.post("/auth/otp", { tel });
-  const v = await c.post("/auth/verifier", { tel, code: o.j.codeDemo });
-  if (!v.j.existe) await c.post("/auth/inscription", { preuve: v.j.preuve, nom, role });
+  const r = await c.post("/auth/inscription", { tel, nom, role, motDePasse: MDP_TEST });
+  if (r.s === 409) return c.post("/auth/connexion", { tel, motDePasse: MDP_TEST });
+  return r;
 }
-async function connecterAgence(c, tel) {
-  const o = await c.post("/agence/otp", { tel });
-  return c.post("/agence/verifier", { tel, code: o.j.codeDemo ?? "123456" });
+async function connecterAgence(c, tel, motDePasse = MDP_DEMO) {
+  return c.post("/agence/connexion", { tel, motDePasse });
 }
 async function photo(i, cl) {
   const buf = await sharp({ create: { width: 1400, height: 1050, channels: 3, background: { r: (i * 40) % 255, g: (i * 77) % 255, b: (i * 23) % 255 } } })
@@ -58,8 +60,8 @@ const pro = new Client("pro"), loc = new Client("loc");
 await connecter(pro, telPro, "Prosper Test", "proprietaire");
 await connecter(loc, telLoc, "Laure Test", "locataire");
 verif("propriétaire connecté", (await pro.get("/moi")).j.compte?.role === "proprietaire");
-const mauvais = await new Client("x").post("/auth/verifier", { tel: telLoc, code: "000000" });
-verif("mauvais code refusé", mauvais.s === 401);
+const mauvais = await new Client("x").post("/auth/connexion", { tel: telLoc, motDePasse: "Mauvais123" });
+verif("mauvais mot de passe refusé", mauvais.s === 401);
 verif("locataire ne peut pas déposer", (await loc.post("/proprietaire/biens", {})).s === 403);
 
 console.log("3. Dépôt d'un bien");
@@ -89,6 +91,7 @@ verif("bien « en étude » avec compte à rebours", b0?.statut === "en-etude" &
 console.log("4. Back-office : étude et contrôle");
 const admin = new Client("admin"), etude = new Client("etude"), agent = new Client("agent"), fin = new Client("fin"), supp = new Client("supp");
 verif("connexion admin", (await connecterAgence(admin, "0161000001")).s === 200);
+verif("mauvais mot de passe agence refusé", (await connecterAgence(new Client("a0"), "0161000001", "Mauvais123")).s === 401);
 await connecterAgence(etude, "0161000002"); await connecterAgence(agent, "0161000004"); await connecterAgence(fin, "0161000006"); await connecterAgence(supp, "0161000007");
 verif("numéro inconnu refusé", (await connecterAgence(new Client("z"), "0100000000")).s === 401);
 let ag = (await etude.get("/agence/etat")).j;
@@ -186,10 +189,10 @@ verif("lien d'invitation valide", info.j.role === "support");
 const nvl = await admin.post(`/agence/equipe/${inv.j.id}/renvoyer`, { canaux: ["SMS"] });
 verif("nouveau lien invalide l'ancien", (await pub.get(`/agence/invitation/${jeton}`)).s === 404 && nvl.j.lien !== inv.j.lien);
 const j2 = nvl.j.lien.split("/").pop();
-const act = await new Client("n2").post(`/agence/invitation/${j2}/activer`, { code: "000000" });
-verif("activation avec mauvais code refusée", act.s === 401);
-const nm = new Client("n3"); const oi2 = await nm.post(`/agence/invitation/${j2}/otp`);
-verif("activation avec bon code", (await nm.post(`/agence/invitation/${j2}/activer`, { code: oi2.j.codeDemo })).s === 200 && (await nm.get("/agence/moi")).j.membre?.role === "support");
+const act = await new Client("n2").post(`/agence/invitation/${j2}/activer`, { motDePasse: "court" });
+verif("activation avec mot de passe trop court refusée", act.s === 422);
+const nm = new Client("n3");
+verif("activation avec un mot de passe", (await nm.post(`/agence/invitation/${j2}/activer`, { motDePasse: "Membre1234" })).s === 200 && (await nm.get("/agence/moi")).j.membre?.role === "support");
 verif("révocation coupe la session", (await admin.post(`/agence/equipe/${inv.j.id}/revoquer`)).s === 200 && (await nm.get("/agence/etat")).s === 401);
 const jr = (await admin.get("/agence/etat")).j.journal;
 verif("journal d'audit alimenté", jr.length >= 10 && jr.some((x) => x.action.includes("Commission remboursée")));
@@ -200,11 +203,11 @@ verif("favori", (await pro.put("/favoris/XT-0409")).s === 200 && (await pro.get(
 verif("alerte de recherche", (await pro.post("/alertes", { quartier: "Agla", type: "chambre-salon", budget: 60000, canal: "sms" })).s === 200);
 verif("cron sans secret refusé", (await pub.get("/cron/rappels")).s === 401);
 const cron = await new Client("c").appel("GET", "/cron/rappels"); void cron;
-const rc = await fetch(BASE + "/cron/rappels", { headers: { authorization: "Bearer cron-secret" } });
+const rc = await fetch(BASE + "/cron/rappels", { headers: { authorization: `Bearer ${process.env.CRON_SECRET ?? "cron-secret"}` } });
 verif("cron exécuté", rc.status === 200, await rc.text());
 const wh = await fetch(BASE + "/webhooks/paiement/test", { method: "POST", body: JSON.stringify({ reference: "x", status: "success" }), headers: { "x-signature": "faux" } });
 verif("webhook non signé refusé", wh.status === 401);
-verif("CSRF : origine étrangère refusée", (await fetch(BASE + "/auth/otp", { method: "POST", headers: { origin: "https://evil.example", "content-type": "application/json" }, body: JSON.stringify({ tel: telLoc }) })).status === 403);
+verif("CSRF : origine étrangère refusée", (await fetch(BASE + "/auth/connexion", { method: "POST", headers: { origin: "https://evil.example", "content-type": "application/json" }, body: JSON.stringify({ tel: telLoc, motDePasse: MDP_TEST }) })).status === 403);
 
 console.log(`\n${ok} vérifications réussies, ${ko} échec(s)`);
 await db.end();

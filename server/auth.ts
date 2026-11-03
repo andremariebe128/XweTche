@@ -1,8 +1,6 @@
-import { config, demoAutorisee } from "./config.js";
-import { codeOtp, egal, jetonAleatoire, sha256, hmac } from "./crypto.js";
+import { jetonAleatoire, sha256 } from "./crypto.js";
 import { db, un } from "./db.js";
 import { cookie, erreur, type Ctx } from "./http.js";
-import { envoyer } from "./sms.js";
 
 export type RoleAgence = "etude" | "terrain" | "finance" | "support" | "admin";
 export type Module =
@@ -49,36 +47,16 @@ export function normaliserTel(brut: string) {
   return t;
 }
 
-// ----------------------------------------------------------------------------- OTP
-export async function demanderOtp(tel: string): Promise<{ codeDemo?: string }> {
-  const recent = await un<{ n: number; dernier: Date | null }>(
-    db, "SELECT count(*)::int AS n, max(cree_le) AS dernier FROM codes_otp WHERE tel = $1 AND cree_le > now() - interval '1 hour'", [tel]);
-  if (recent && recent.n >= 5) throw erreur(429, "Trop de codes demandés. Réessayez dans une heure.");
-  if (recent?.dernier && Date.now() - new Date(recent.dernier).getTime() < 30_000)
-    throw erreur(429, "Un code vient d'être envoyé. Patientez 30 secondes avant d'en demander un autre.");
-
-  const code = codeOtp();
-  await db.query("INSERT INTO codes_otp (tel, code_hash, expire_le) VALUES ($1, $2, now() + interval '10 minutes')", [tel, hmac(`${tel}:${code}`)]);
-  if (config.otpMode === "demo") {
-    if (!demoAutorisee()) throw erreur(503, "La connexion par SMS n'est pas encore disponible.");
-    return { codeDemo: code };
-  }
-  await envoyer({ canal: "sms", tel, texte: `Xwé Tché : votre code est ${code}. Ne le communiquez à personne, même si on vous appelle.` });
-  return {};
+// ------------------------------------------------- Limitation des tentatives de connexion
+// Cinq échecs en 15 minutes bloquent temporairement le numéro (protection contre le bourrage).
+export async function verifierTentatives(cle: string) {
+  const r = await un<{ n: number }>(db,
+    "SELECT count(*)::int AS n FROM tentatives_connexion WHERE cle = $1 AND NOT reussi AND cree_le > now() - interval '15 minutes'", [cle]);
+  if ((r?.n ?? 0) >= 5) throw erreur(429, "Trop de tentatives. Réessayez dans 15 minutes.");
 }
 
-export async function verifierOtp(tel: string, code: string): Promise<boolean> {
-  const l = await un<{ id: string; code_hash: string; tentatives: number }>(
-    db, `SELECT id, code_hash, tentatives FROM codes_otp
-          WHERE tel = $1 AND consomme_le IS NULL AND expire_le > now()
-          ORDER BY cree_le DESC LIMIT 1`, [tel]);
-  if (!l || l.tentatives >= 5) return false;
-  if (!egal(l.code_hash, hmac(`${tel}:${code}`))) {
-    await db.query("UPDATE codes_otp SET tentatives = tentatives + 1 WHERE id = $1", [l.id]);
-    return false;
-  }
-  await db.query("UPDATE codes_otp SET consomme_le = now() WHERE id = $1", [l.id]);
-  return true;
+export async function noterTentative(cle: string, ip: string, reussi: boolean) {
+  await db.query("INSERT INTO tentatives_connexion (cle, ip, reussi) VALUES ($1, $2, $3)", [cle, ip, reussi]);
 }
 
 // --------------------------------------------------------------------------- Sessions

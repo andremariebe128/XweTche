@@ -6,8 +6,7 @@ export const config = {
   databaseUrl: env.DATABASE_URL ?? "",
   secret: env.SESSION_SECRET ?? "",
   appUrl: (env.APP_URL ?? "").replace(/\/$/, ""),
-  // « demo » : le code OTP est renvoyé à l'écran (aucun SMS). « sms » : envoi réel.
-  otpMode: (env.OTP_MODE ?? "demo") as "demo" | "sms",
+  // Prestataire d'envoi des SMS (notifications, invitations) : « console » ou « http ».
   smsProvider: (env.SMS_PROVIDER ?? "console") as "console" | "http",
   smsApiUrl: env.SMS_API_URL ?? "",
   smsApiKey: env.SMS_API_KEY ?? "",
@@ -16,7 +15,7 @@ export const config = {
   paymentMode: (env.PAYMENT_MODE ?? "simule") as "simule" | "webhook",
   paymentWebhookSecret: env.PAYMENT_WEBHOOK_SECRET ?? "",
   cronSecret: env.CRON_SECRET ?? "",
-  // Autorise les modes de démonstration (OTP affiché, paiement simulé) même en production.
+  // Autorise les modes de démonstration (paiement simulé) même en production.
   autoriserDemo: env.ALLOW_DEMO === "1",
   blobConfigured: !!(env.BLOB_READ_WRITE_TOKEN || env.BLOB_STORE_ID),
 };

@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { demanderOtp, exigerMembre, fermerSession, journaliser, membreCourant, normaliserTel, ouvrirSession, PERMISSIONS, verifierOtp, type Membre, type Module } from "../auth.js";
+import { exigerMembre, fermerSession, journaliser, membreCourant, normaliserTel, noterTentative, ouvrirSession, PERMISSIONS, verifierTentatives, type Membre, type Module } from "../auth.js";
 import { config } from "../config.js";
-import { jetonAleatoire, sha256 } from "../crypto.js";
+import { hacherMotDePasse, jetonAleatoire, sha256, verifierMotDePasse } from "../crypto.js";
 import { db, tx, un } from "../db.js";
 import { erreur, get, patch, post, type Ctx } from "../http.js";
 import { notifier } from "../notifier.js";
@@ -12,26 +12,24 @@ const peut = (m: Membre, mod: Module) => PERMISSIONS[mod].includes(m.role);
 export const origine = (c: Ctx) =>
   config.appUrl || `${c.req.headers.get("x-forwarded-proto") ?? c.url.protocol.replace(":", "")}://${c.req.headers.get("x-forwarded-host") ?? c.req.headers.get("host") ?? c.url.host}`;
 
-// ------------------------------------------------------------------ Connexion à double facteur
+// ------------------------------------------------------------------ Connexion (numéro + mot de passe)
 const telSchema = z.object({ tel: z.string().min(8).max(20) });
-const membreParTel = (tel: string) =>
-  un<{ id: string }>(db, "SELECT id FROM membres_agence WHERE tel = $1 AND statut = 'actif'", [tel]);
+const motDePasse = z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères.").max(128);
+const ipDe = (c: Ctx) => (c.req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim().slice(0, 60) || "inconnu";
 
-// Même réponse que le numéro soit connu ou non : on ne révèle pas qui fait partie de l'équipe.
-post("/agence/otp", async (c) => {
-  const { tel } = await c.body(telSchema);
-  const t = normaliserTel(tel);
-  return (await membreParTel(t)) ? demanderOtp(t) : {};
-});
-
-post("/agence/verifier", async (c) => {
-  const b = await c.body(telSchema.extend({ code: z.string().regex(/^\d{6}$/) }));
+post("/agence/connexion", async (c) => {
+  const b = await c.body(telSchema.extend({ motDePasse }));
   const t = normaliserTel(b.tel);
-  const m = await membreParTel(t);
-  if (!m || !(await verifierOtp(t, b.code))) throw erreur(401, "Ce code n'est pas bon ou a expiré, ou votre accès n'est pas actif.");
-  await ouvrirSession(c, { membreId: m.id });
-  const membre = await un<Membre>(db, "SELECT id, nom, tel, email::text, role, statut FROM membres_agence WHERE id = $1", [m.id]);
-  await journaliser(membre as any, "Connexion au back-office", membre!.nom);
+  const cle = `a:${t}`;
+  await verifierTentatives(cle);
+  const m = await un<{ id: string; nom: string; tel: string; email: string | null; role: Membre["role"]; statut: string; mot_de_passe_hash: string | null }>(
+    db, "SELECT id, nom, tel, email::text, role, statut, mot_de_passe_hash FROM membres_agence WHERE tel = $1", [t]);
+  const ok = !!m && m.statut === "actif" && (await verifierMotDePasse(b.motDePasse, m.mot_de_passe_hash));
+  await noterTentative(cle, ipDe(c), ok);
+  if (!ok) throw erreur(401, "Numéro ou mot de passe incorrect, ou accès inactif.");
+  await ouvrirSession(c, { membreId: m!.id });
+  const membre: Membre = { id: m!.id, nom: m!.nom, tel: m!.tel, email: m!.email, role: m!.role, statut: m!.statut };
+  await journaliser(membre, "Connexion au back-office", membre.nom);
   return { membre };
 });
 
@@ -51,13 +49,12 @@ get("/agence/invitation/:jeton", async (c) => {
   const i = await invitation(c.params.jeton);
   return { nom: i.nom, role: i.role, tel: i.tel, par: i.par, expireLe: iso(i.expire_le) };
 });
-post("/agence/invitation/:jeton/otp", async (c) => demanderOtp((await invitation(c.params.jeton)).tel));
 post("/agence/invitation/:jeton/activer", async (c) => {
-  const { code } = await c.body(z.object({ code: z.string().regex(/^\d{6}$/) }));
+  const { motDePasse: mdp } = await c.body(z.object({ motDePasse }));
   const i = await invitation(c.params.jeton);
-  if (!(await verifierOtp(i.tel, code))) throw erreur(401, "Ce code n'est pas bon ou a expiré.");
+  const hash = await hacherMotDePasse(mdp);
   await tx(async (q) => {
-    await q.query("UPDATE membres_agence SET statut = 'actif' WHERE id = $1", [i.membre_id]);
+    await q.query("UPDATE membres_agence SET statut = 'actif', mot_de_passe_hash = $2 WHERE id = $1", [i.membre_id, hash]);
     await q.query("UPDATE invitations_membre SET utilise_le = now() WHERE id = $1", [i.id]);
   });
   await ouvrirSession(c, { membreId: i.membre_id });

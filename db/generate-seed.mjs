@@ -1,4 +1,5 @@
-// Génère db/seed/*.sql à partir des données de l'app (src/data, src/lib/parametres).
+// Génère db/seed/001_reference.sql à partir des données de l'app (src/data, src/lib/parametres).
+// Le seed de démonstration (002_demo.sql) est maintenu à la main : les annonces viennent de l'API.
 // Usage : node db/generate-seed.mjs
 import { build } from "esbuild";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -16,7 +17,7 @@ async function charger(entree) {
 }
 
 const { THEMES } = await charger("src/data/aide.ts");
-const { ANNONCES, QUARTIERS, slugQuartier } = await charger("src/data/annonces.ts");
+const { slugQuartier } = await charger("src/data/annonces.ts");
 const { PARAMETRES_DEFAUT: P } = await charger("src/lib/parametres.ts");
 
 const q = (v) => (v == null ? "NULL" : `'${String(v).replace(/'/g, "''")}'`);
@@ -46,7 +47,15 @@ const PARAMS = [
   ["jours_sans_visite", [0], "Jours sans visite (0 = dimanche)"],
 ];
 const MOTIFS = [
-  ["refus", P.motifsRefus], ["correction", P.motifsCorrection], ["visite", P.motifsVisite],
+  ["refus", [
+    "Documents de propriété insuffisants", "Identité du propriétaire non vérifiée", "Photos ne correspondant pas au bien",
+    "Annonce en double", "Bien non conforme à la charte",
+  ]],
+  ["correction", [
+    "Photos floues ou sombres", "Photo manquante (pièce obligatoire)", "Montants incohérents",
+    "Description incomplète", "Repères insuffisants",
+  ]],
+  ["visite", P.motifsVisite],
   ["signalement", [
     "On m'a demandé de l'argent avant la visite", "Déjà loué", "Photos non conformes à la réalité",
     "Faux compte ou faux numéro se réclamant de Xwé Tché", "Annonce fausse ou abusive", "Autre",
@@ -54,7 +63,7 @@ const MOTIFS = [
 ];
 const MODELES = [
   ["invitation-sms", "Invitation membre", "sms", "XweTche : {par} vous invite au back-office avec le rôle « {role} ». Activez votre accès avant le {expire} : {lien}"],
-  ["invitation-email", "Invitation membre", "email", "Objet : Votre accès au back-office Xwé Tché\n\nBonjour {prenom},\n\n{par} vous invite à rejoindre le back-office Xwé Tché avec le rôle « {role} ».\n\nActivez votre accès avec ce lien, valable jusqu'au {expire} : {lien}\n\nVous recevrez un code par SMS au {tel} pour confirmer. Si vous n'attendiez pas cette invitation, ignorez ce message.\n\nL'équipe Xwé Tché"],
+  ["invitation-email", "Invitation membre", "email", "Objet : Votre accès au back-office Xwé Tché\n\nBonjour {prenom},\n\n{par} vous invite à rejoindre le back-office Xwé Tché avec le rôle « {role} ».\n\nOuvrez ce lien pour choisir votre mot de passe, avant le {expire} : {lien}\n\nSi vous n'attendiez pas cette invitation, ignorez ce message.\n\nL'équipe Xwé Tché"],
   ["visite-confirmee", "Visite confirmée", "sms", "XweTche : visite confirmée le {date} à {heure}. Code {code}. Adresse : {adresse}. Ne payez rien avant la visite."],
   ["visite-rappel", "Rappel la veille", "whatsapp", "Bonjour {prenom}, rappel de votre visite demain à {heure} ({quartier}). Votre agent : {agent}. Empêché ? Annulez avant {limite}."],
   ["avis", "Avis après visite", "sms", "XweTche : comment s'est passée la visite de {ref} ? Répondez sur {lien}. « Pas satisfait » = prochaine visite gratuite."],
@@ -71,7 +80,13 @@ const MODELES = [
   ["liberation", "Logement bientôt libre", "sms", "XweTche : le logement {ref} à {quartier} se libère le {date}. Réservez une visite : {lien}. STOP pour arrêter."],
 ];
 
-const quartiersTous = [...new Set([...P.quartiers, ...QUARTIERS, ...ANNONCES.map((a) => a.quartier)])];
+// Quartiers connus au démarrage (les suivants s'ajoutent depuis le back-office).
+const QUARTIERS = [
+  "Fidjrossè", "Cadjèhoun", "Haie Vive", "Akpakpa", "Agla", "Gbégamey", "Zogbo", "Missèbo", "Vèdoko", "Sainte-Rita",
+  "Godomey", "Calavi Kpota",
+];
+
+const quartiersTous = [...new Set([...P.quartiers, ...QUARTIERS])];
 const villeDe = (n) => VILLE_DE[n] ?? "Cotonou";
 
 let ref = "-- Données de référence : générées par db/generate-seed.mjs, ne pas éditer à la main.\n-- Idempotent : peut être rejoué sans doublon.\nBEGIN;\n\n";
@@ -89,31 +104,7 @@ ref += "-- FAQ : thèmes de src/data/aide.ts (« theme » = id du thème : " + T
 ref += "INSERT INTO contenus_editoriaux (type, slug, theme, theme_titre, titre, texte, ordre, statut) VALUES\n" + faq.join(",\n") + "\nON CONFLICT (type, slug, langue) DO NOTHING;\n";
 ref += "INSERT INTO contenus_editoriaux (type, slug, titre, texte, statut) VALUES\n  ('banniere', 'principale', 'Bandeau du site', 'Nouveau : les visites sont désormais possibles le samedi après-midi.', 'brouillon')\nON CONFLICT (type, slug, langue) DO NOTHING;\n\nCOMMIT;\n";
 
-// --------------------------------------------------------------------- démo
-const EQUIPE = [
-  ["Clarisse Ahouandjinou", "0161000001", "clarisse@xwetche.bj", "admin", "actif"],
-  ["Fabrice Dossa", "0161000002", "fabrice@xwetche.bj", "etude", "actif"],
-  ["Nadège Kpadonou", "0161000003", "nadege@xwetche.bj", "etude", "actif"],
-  ["Serge Houngbo", "0161000004", "serge@xwetche.bj", "terrain", "actif"],
-  ["Rachidatou Bello", "0161000005", "rachidatou@xwetche.bj", "terrain", "actif"],
-  ["Brice Tossou", "0161000006", "brice@xwetche.bj", "finance", "actif"],
-  ["Mireille Zinsou", "0161000007", "mireille@xwetche.bj", "support", "actif"],
-];
-const STATUT = { "en-ligne": "en_ligne", reservee: "reservee", bientot: "louee" };
-const dateVerif = (s) => { const [j, m] = s.split("/"); return `2026-${m}-${j}`; };
-
-let demo = "-- Données de démonstration (DEV UNIQUEMENT) : générées par db/generate-seed.mjs.\n-- Ne jamais charger en production : numéros et noms fictifs.\nBEGIN;\n\n";
-demo += "INSERT INTO membres_agence (nom, tel, email, role, statut) VALUES\n" + EQUIPE.map((m) => `  (${m.map(q).join(", ")})`).join(",\n") + "\nON CONFLICT (tel) DO NOTHING;\n\n";
-demo += "INSERT INTO utilisateurs (tel, nom, roles, role_actif, identite) VALUES\n  ('0166554433', 'Koffi Agbo', '{proprietaire}', 'proprietaire', 'verifiee'),\n  ('0197123456', 'Awa Dossou', '{locataire}', 'locataire', 'verifiee')\nON CONFLICT (tel) DO NOTHING;\n\n";
-for (const a of ANNONCES) {
-  const agent = `(SELECT id FROM membres_agence WHERE tel = '0161000004')`;
-  demo += `-- ${a.ref} · ${a.titre}\nWITH nb AS (\n  INSERT INTO biens (proprietaire_id, type, quartier_id, adresse, reperes, surface_m2, chambres, description, regles)\n  VALUES ((SELECT id FROM utilisateurs WHERE tel = '0166554433'), ${q(a.type)},\n    (SELECT qu.id FROM quartiers qu JOIN villes v ON v.id = qu.ville_id WHERE qu.slug = ${q(slug(a.quartier))} AND v.nom = ${q(a.ville)}),\n    ${q("Adresse exacte (démo) — " + a.quartier)}, ${q(`{${a.reperes.map((r) => `"${r.replace(/"/g, '\\"')}"`).join(",")}}`)}, ${a.surface ?? "NULL"}, ${a.chambres}, ${q(a.description)}, ${q(`{${a.regles.map((r) => `"${r.replace(/"/g, '\\"')}"`).join(",")}}`)})\n  RETURNING id\n), na AS (\n  INSERT INTO annonces (ref, slug, bien_id, titre, loyer, avance_mois, caution_mois, charges, statut, soumise_le, publiee_le, verifie_le, agent_terrain_id)\n  SELECT ${q(a.ref)}, ${q(a.slug)}, nb.id, ${q(a.titre)}, ${a.loyer}, ${a.avanceMois}, ${a.cautionMois}, ${a.charges}, '${STATUT[a.statut]}', now() - interval '5 days', now() - interval '${a.publieeIlYa} days', ${q(dateVerif(a.verifieLe))}, ${agent} FROM nb\n  ON CONFLICT (ref) DO NOTHING RETURNING id\n)\n`;
-  demo += `INSERT INTO annonce_equipements (annonce_id, equipement) SELECT na.id, e FROM na, unnest(ARRAY[${a.equipements.map(q).join(", ")}]) AS e;\n\n`;
-  demo += `INSERT INTO medias (annonce_id, cle_webp, ordre, legende, largeur_px, hauteur_px)\nSELECT id, 'demo/' || ref || '/' || n || '.webp', n, l, 1280, 960 FROM annonces, unnest(ARRAY[${a.photos.map(q).join(", ")}]) WITH ORDINALITY AS t(l, n) WHERE ref = ${q(a.ref)}\nON CONFLICT DO NOTHING;\n\n`;
-}
-demo += "COMMIT;\n";
-
 mkdirSync(join(racine, "db", "seed"), { recursive: true });
 writeFileSync(join(racine, "db", "seed", "001_reference.sql"), ref);
-writeFileSync(join(racine, "db", "seed", "002_demo.sql"), demo);
-console.log(`Seeds générés : ${quartiersTous.length} quartiers, ${faq.length} questions FAQ, ${ANNONCES.length} annonces de démo.`);
+console.log(`Seed de référence généré : ${quartiersTous.length} quartiers, ${faq.length} questions FAQ.`);
+console.log("Le seed de démonstration (002_demo.sql) est maintenu à la main.");

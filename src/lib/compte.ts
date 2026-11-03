@@ -133,26 +133,19 @@ export async function amorcerSession() {
   }
 }
 
-// ---------------------------------------------------------------- Connexion en 3 étapes (AUT-01 à AUT-03)
-/** Étape 1. En mode démonstration, l'API renvoie le code (codeDemo) au lieu de l'envoyer par SMS. */
-export const demanderCode = (tel: string) => api.post<{ codeDemo?: string }>("/auth/otp", { tel });
-
-export interface ResultatVerification {
-  existe: boolean;
-  compte?: Compte;
-  preuve?: string;
-}
-/** Étape 2. Compte existant : la session est ouverte. Sinon : une preuve à présenter à inscrire(). */
-export async function verifierCode(tel: string, code: string) {
-  const r = await api.post<ResultatVerification>("/auth/verifier", { tel, code });
-  if (r.existe) await finirConnexion();
-  return r;
-}
-/** Étape 3, nouveaux comptes seulement. */
-export async function inscrire(preuve: string, nom: string, role: Role) {
-  await api.post("/auth/inscription", { preuve, nom, role });
+// ---------------------------------------------------------------- Connexion (numéro + mot de passe)
+/** Ouvre la session avec le numéro et le mot de passe du compte (AUT-01, AUT-02). */
+export async function connecter(tel: string, motDePasse: string) {
+  await api.post("/auth/connexion", { tel, motDePasse });
   await finirConnexion();
 }
+
+/** Crée le compte puis ouvre la session (AUT-03). */
+export async function inscrire(p: { tel: string; nom: string; role: Role; motDePasse: string }) {
+  await api.post("/auth/inscription", p);
+  await finirConnexion();
+}
+
 async function finirConnexion() {
   await rafraichirEtat();
   void import("./favoris").then((m) => m.synchroniserFavoris());

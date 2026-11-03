@@ -50,7 +50,7 @@ Prérequis : **Node.js 20+** (https://nodejs.org) et Git.
      node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
      ```
    - `CRON_SECRET` : même commande, une autre valeur.
-   - Laissez le reste tel quel (`OTP_MODE=demo`, `PAYMENT_MODE=simule`).
+   - Laissez le reste tel quel (`PAYMENT_MODE=simule`). La connexion se fait par numéro + mot de passe, sans réglage supplémentaire.
 
 **Ne publiez jamais `.env`** : il est déjà dans `.gitignore`.
 
@@ -61,28 +61,28 @@ Prérequis : **Node.js 20+** (https://nodejs.org) et Git.
 Trois commandes, dans cet ordre :
 
 ```
-npm run db:migrate     # crée les tables, règles métier, vues (3 fichiers de db/migrations)
+npm run db:migrate     # crée les tables, règles métier, vues (4 fichiers de db/migrations)
 npm run db:seed        # charge les données de référence : villes, quartiers, équipements, paramètres, modèles de messages, FAQ
 npm run db:demo        # (développement seulement) équipe du back-office + comptes et annonces de démonstration
 ```
 
-Vous devez voir `+ 001_schema.sql`, `+ 002_vues_fonctions.sql`, `+ 003_api.sql`, puis `+ seed/...`.
+Vous devez voir `+ 001_schema.sql`, `+ 002_vues_fonctions.sql`, `+ 003_api.sql`, `+ 004_mots_de_passe.sql`, puis `+ seed/...`.
 Relancer une commande est sans danger : chaque migration n'est jouée qu'une fois.
 
 Vérifiez dans Neon → **Tables** : une trentaine de tables (`utilisateurs`, `annonces`, `visites`, `baux`, `paiements`…).
 
 **Comptes de démonstration** (après `db:demo`)
 
-| Rôle | Téléphone |
-|---|---|
-| Back-office, administrateur | 0161000001 |
-| Back-office, étude | 0161000002 |
-| Back-office, agent terrain | 0161000004 |
-| Back-office, finance | 0161000006 |
-| Propriétaire démo | 0166554433 |
-| Locataire démo | 0197123456 |
+Le mot de passe de tous les comptes de démonstration est **`Demo1234`**.
 
-En mode démo, le code à 6 chiffres s'affiche à l'écran au lieu d'être envoyé par SMS.
+| Rôle | Téléphone | Mot de passe |
+|---|---|---|
+| Back-office, administrateur | 0161000001 | `Demo1234` |
+| Back-office, étude | 0161000002 | `Demo1234` |
+| Back-office, agent terrain | 0161000004 | `Demo1234` |
+| Back-office, finance | 0161000006 | `Demo1234` |
+| Propriétaire démo | 0166554433 | `Demo1234` |
+| Locataire démo | 0197123456 | `Demo1234` |
 
 ---
 
@@ -100,7 +100,7 @@ Ouvrez http://localhost:5173.
 - Connexion locataire/propriétaire : `/connexion`.
 - Back-office : `/agence`.
 
-**Test automatique de l'API** (80 vérifications, à lancer API arrêtée ou non) :
+**Test automatique de l'API** (81 vérifications, à lancer API arrêtée ou non) :
 ```
 node --env-file=.env server/e2e.mjs
 ```
@@ -120,12 +120,11 @@ node --env-file=.env server/e2e.mjs
 | `SESSION_SECRET` | 32+ caractères aléatoires (différent du local) |
 | `APP_URL` | l'adresse finale du site, ex. `https://xwetche.vercel.app` (ou votre domaine) |
 | `CRON_SECRET` | valeur aléatoire |
-| `OTP_MODE` | `demo` pour un premier essai, puis `sms` (voir partie 7) |
-| `SMS_PROVIDER` | `console` puis `http` |
+| `SMS_PROVIDER` | `console` puis `http` (notifications et invitations) |
 | `PAYMENT_MODE` | `simule` puis `webhook` |
-| `ALLOW_DEMO` | `1` **uniquement** tant que vous testez la mise en ligne avec les modes démo |
+| `ALLOW_DEMO` | `1` **uniquement** tant que vous testez la mise en ligne avec le paiement simulé |
 
-   > En production, l'API **refuse** OTP démo et paiement simulé si `ALLOW_DEMO` n'est pas à `1`. C'est voulu : on ne doit jamais afficher un code de connexion à l'écran avec de vrais utilisateurs.
+   > En production, l'API **refuse** le paiement simulé si `ALLOW_DEMO` n'est pas à `1`. C'est voulu : on ne doit jamais encaisser un faux paiement avec de vrais utilisateurs.
 
 4. **Migrer la base de production** depuis votre PC, en mettant dans `.env` les chaînes de la branche `main` de Neon, puis :
    ```
@@ -141,14 +140,15 @@ node --env-file=.env server/e2e.mjs
 
 ## Partie 6 — Créer le premier administrateur en production
 
-La production n'a pas de comptes de démo. Dans l'éditeur SQL de Neon (*SQL Editor*, branche `main`), exécutez en remplaçant nom et numéro :
+La production n'a pas de comptes de démo. Depuis votre PC, avec les chaînes de la branche `main` dans `.env`, créez le premier administrateur :
 
-```sql
-INSERT INTO membres_agence (nom, tel, role, statut)
-VALUES ('Votre Nom', '01XXXXXXXX', 'admin', 'actif');
+```
+npm run admin:creer -- "Votre Nom" 01XXXXXXXX "un-mot-de-passe-solide"
 ```
 
-Connectez-vous ensuite sur `/agence` avec ce numéro. Depuis **Administration → Équipe**, invitez les autres membres (étude, terrain, finance, support) : ils reçoivent un lien d'activation par SMS.
+Le mot de passe doit contenir au moins 8 caractères. La commande peut aussi réinitialiser le mot de passe d'un membre existant.
+
+Connectez-vous ensuite sur `/agence` avec ce numéro et ce mot de passe. Depuis **Administration → Équipe**, invitez les autres membres (étude, terrain, finance, support) : ils reçoivent un lien d'activation par SMS et choisissent leur propre mot de passe.
 
 ---
 
@@ -156,7 +156,7 @@ Connectez-vous ensuite sur `/agence` avec ce numéro. Depuis **Administration �
 
 Ces trois points dépendent de choix qui vous appartiennent. Le code est prêt, il reste à brancher.
 
-1. **SMS réels.** Choisissez un prestataire (ex. un agrégateur SMS couvrant le Bénin). Mettez `SMS_PROVIDER=http`, `SMS_API_URL`, `SMS_API_KEY`, `SMS_SENDER`, puis `OTP_MODE=sms`. L'appel HTTP est dans `server/sms.ts` ; adaptez le corps de la requête au format de votre prestataire.
+1. **SMS réels.** Choisissez un prestataire (ex. un agrégateur SMS couvrant le Bénin). Mettez `SMS_PROVIDER=http`, `SMS_API_URL`, `SMS_API_KEY`, `SMS_SENDER`. L'appel HTTP est dans `server/sms.ts` ; adaptez le corps de la requête au format de votre prestataire. Les SMS servent aux notifications et aux invitations, pas à la connexion.
 2. **Paiement Mobile Money.** Le prestataire n'est pas encore choisi dans le cahier des charges (FedaPay, KkiaPay, MTN MoMo, Moov Money…). Une fois choisi :
    - écrivez l'appel d'initiation dans `initierChezPrestataire` (`server/paiement.ts`) ;
    - déclarez dans le tableau de bord du prestataire l'URL de rappel `https://votre-site/api/webhooks/paiement/<nom>` et le même secret que `PAYMENT_WEBHOOK_SECRET` (signature HMAC-SHA256 dans l'en-tête `x-signature`) ;
@@ -165,7 +165,7 @@ Ces trois points dépendent de choix qui vous appartiennent. Le code est prêt, 
 
 **Liste de contrôle avant ouverture**
 - [ ] `/api/sante` répond `ok`
-- [ ] `ALLOW_DEMO` retiré, `OTP_MODE=sms`, `PAYMENT_MODE=webhook`
+- [ ] `ALLOW_DEMO` retiré, `PAYMENT_MODE=webhook`
 - [ ] Store Blob **privé** créé
 - [ ] Premier administrateur créé, comptes de démo absents de la base de production
 - [ ] Sauvegarde : Neon conserve l'historique (restauration à un instant donné) ; vérifiez la durée de rétention de votre offre
@@ -175,7 +175,7 @@ Ces trois points dépendent de choix qui vous appartiennent. Le code est prêt, 
 
 ## Partie 8 — Au quotidien
 
-- **Modifier la base** : ajoutez un fichier `db/migrations/004_xxx.sql` (jamais modifier les anciens), puis `npm run db:migrate`.
+- **Modifier la base** : ajoutez un fichier `db/migrations/005_xxx.sql` (jamais modifier les anciens), puis `npm run db:migrate`.
 - **Changer commission, délais, plafonds** : back-office → Administration → Paramètres (aucun code à toucher).
 - **Modifier les modèles de SMS, la FAQ, le bandeau d'accueil** : back-office → Administration.
 - **Tester une nouveauté sans risque** : branche Neon `dev` + déploiement « Preview » de Vercel (une variable `DATABASE_URL` différente pour *Preview*).
@@ -189,7 +189,8 @@ Ces trois points dépendent de choix qui vous appartiennent. Le code est prêt, 
 | Le site local affiche des erreurs réseau | l'API n'est pas lancée (`npm run api:dev`) |
 | 403 « origine » en production | `APP_URL` ne correspond pas à l'adresse réelle du site |
 | Envoi de photo échoue en production | store Blob privé non connecté |
-| Code SMS jamais reçu | `OTP_MODE=sms` sans prestataire configuré : regarder les journaux Vercel |
+| Mot de passe oublié (back-office) | `npm run admin:creer -- "Nom" 01XXXXXXXX "nouveau-mot-de-passe"` |
+| SMS jamais reçu | `SMS_PROVIDER=http` sans prestataire configuré : regarder les journaux Vercel |
 
 ## Ce qui n'est pas encore fait (à savoir)
 

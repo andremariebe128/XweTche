@@ -211,10 +211,9 @@ export function peut(role: RoleAgence | undefined, module: Module) {
   return !!role && PERMISSIONS[module].includes(role);
 }
 
-// ---------------------------------------------------------------- Connexion à double facteur (numéro professionnel + code SMS)
-export const demanderCodeAgence = (tel: string) => api.post<{ codeDemo?: string }>("/agence/otp", { tel });
-export async function verifierCodeAgence(tel: string, code: string) {
-  await api.post("/agence/verifier", { tel, code });
+// ---------------------------------------------------------------- Connexion (numéro professionnel + mot de passe)
+export async function connecterAgence(tel: string, motDePasse: string) {
+  await api.post("/agence/connexion", { tel, motDePasse });
   await rafraichirAgence();
 }
 export async function deconnecterAgence() {
@@ -232,9 +231,9 @@ export interface InfosInvitation {
 }
 /** Lève une ApiError 404 si le lien a expiré, a servi ou a été annulé. */
 export const infosInvitation = (jeton: string) => api.get<InfosInvitation>(`/agence/invitation/${jeton}`);
-export const demanderCodeInvitation = (jeton: string) => api.post<{ codeDemo?: string }>(`/agence/invitation/${jeton}/otp`);
-export async function activerInvitation(jeton: string, code: string) {
-  await api.post(`/agence/invitation/${jeton}/activer`, { code });
+/** Le membre choisit son mot de passe : l'invitation est consommée et la session ouverte. */
+export async function activerInvitation(jeton: string, motDePasse: string) {
+  await api.post(`/agence/invitation/${jeton}/activer`, { motDePasse });
   await rafraichirAgence();
 }
 
